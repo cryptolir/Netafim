@@ -1,0 +1,21 @@
+{
+  "name": "netafim-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "React client for the Netafim web application",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "dependencies": {
+    "axios": "^1.6.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.16.0",
+    "react-scripts": "5.0.1",
+    "react-i18next": "^13.0.0",
+    "i18next": "^23.0.1"
+  }
+}

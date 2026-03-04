@@ -1,60 +1,86 @@
 import React, { useState, useContext } from 'react';
 import axios from 'axios';
-import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
+import '../App.css';
 
 export default function Login() {
   const { login } = useContext(AuthContext);
   const { t, i18n } = useTranslation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
     try {
       const res = await axios.post('/api/auth/login', { username, password });
       login(res.data.token);
-      // After login, navigate based on role.  Decode token or call /auth/me in real app.
       const [, payload] = res.data.token.split('.');
       const { role } = JSON.parse(atob(payload));
-      if (role === 'admin') window.location.href = '/dashboard';
-      else window.location.href = '/client';
+      window.location.href = role === 'admin' ? '/dashboard' : '/portal';
     } catch (err) {
-      setError(t('invalid_credentials'));
+      setError(t('invalid_credentials') || 'Invalid username or password');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const changeLanguage = (lng) => i18n.changeLanguage(lng);
-
   return (
-    <div className="login-container" style={{ padding: '2rem' }}>
-      <h2>{t('login')}</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>{t('username')}:</label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
+    <div className="login-page">
+      <div className="login-card">
+        <div className="login-logo">
+          <span className="ship-icon">⚓</span>
+          <h1>Netafim</h1>
+          <p>Logistics &amp; Supply Chain Portal</p>
         </div>
-        <div>
-          <label>{t('password')}:</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+
+        {error && <div className="login-error">{error}</div>}
+
+        <form className="login-form" onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>{t('username') || 'Username'}</label>
+            <input
+              type="text"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              placeholder="Enter your username"
+              autoFocus
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>{t('password') || 'Password'}</label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+            />
+          </div>
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? 'Signing in...' : (t('login') || 'Sign In')}
+          </button>
+        </form>
+
+        <div className="lang-toggle">
+          <button
+            className={`lang-btn ${i18n.language === 'en' ? 'active' : ''}`}
+            onClick={() => i18n.changeLanguage('en')}
+          >
+            English
+          </button>
+          <button
+            className={`lang-btn ${i18n.language === 'fr' ? 'active' : ''}`}
+            onClick={() => i18n.changeLanguage('fr')}
+          >
+            Français
+          </button>
         </div>
-        <button type="submit">{t('login')}</button>
-      </form>
-      <div style={{ marginTop: '1rem' }}>
-        <button onClick={() => changeLanguage('en')}>English</button>
-        <button onClick={() => changeLanguage('fr')}>Français</button>
       </div>
     </div>
   );

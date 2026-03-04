@@ -3,6 +3,18 @@ import axios from 'axios';
 import { AuthContext } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 
+const SUGGESTIONS = [
+  '🚢 Where is container MSCU1234567?',
+  '📅 Schedules from Ashdod to Hamburg?',
+  '💰 Freight rate Shanghai to Rotterdam?',
+  '📦 What is FCL vs LCL shipping?',
+  '🌍 Sea distance Haifa to Rotterdam?',
+];
+
+function formatTime(date) {
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 export default function ChatAgent() {
   const { token } = useContext(AuthContext);
   const { t } = useTranslation();
@@ -10,22 +22,23 @@ export default function ChatAgent() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
+  const inputRef = useRef(null);
+  const sessionId = useRef(`netafim_${Date.now()}`);
 
-  // Auto-scroll to latest message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, loading]);
 
-  const send = async () => {
-    if (!input.trim() || loading) return;
-    const userText = input.trim();
-    const userMessage = { sender: 'user', text: userText };
-    setMessages((prev) => [...prev, userMessage]);
+  const sendMessage = async (text) => {
+    const msgText = text || input.trim();
+    if (!msgText || loading) return;
+
+    const userMsg = { sender: 'user', text: msgText, time: new Date() };
+    setMessages(prev => [...prev, userMsg]);
     setInput('');
     setLoading(true);
 
-    // Build history in OpenAI format for context
-    const history = messages.map((m) => ({
+    const history = messages.map(m => ({
       role: m.sender === 'user' ? 'user' : 'assistant',
       content: m.text
     }));
@@ -33,66 +46,109 @@ export default function ChatAgent() {
     try {
       const res = await axios.post(
         '/api/chat',
-        { message: userText, history },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { message: msgText, history, sessionId: sessionId.current },
+        { headers: { Authorization: `Bearer ${token}` }, timeout: 35000 }
       );
       const reply = res.data.reply || res.data.answer || JSON.stringify(res.data);
-      setMessages((prev) => [...prev, { sender: 'agent', text: reply }]);
+      setMessages(prev => [...prev, { sender: 'agent', text: reply, time: new Date() }]);
     } catch (err) {
-      setMessages((prev) => [...prev, { sender: 'agent', text: t('chat_error') }]);
+      setMessages(prev => [...prev, {
+        sender: 'agent',
+        text: t('chat_error') || 'An error occurred. Please try again.',
+        time: new Date(),
+        isError: true
+      }]);
     } finally {
       setLoading(false);
+      inputRef.current?.focus();
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
     }
   };
 
   return (
-    <div style={{ border: '1px solid #ddd', padding: '1rem', borderRadius: '4px' }}>
-      <div
-        style={{
-          maxHeight: '300px',
-          overflowY: 'auto',
-          marginBottom: '0.5rem',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.4rem'
-        }}
-      >
+    <div className="chat-phone">
+      {/* Phone header / notch */}
+      <div className="chat-phone-notch">
+        <div className="agent-avatar">🤖</div>
+        <div className="agent-info">
+          <div className="agent-name">Netafim AI Assistant</div>
+          <div className="agent-status">
+            <span className="online-dot" />
+            Powered by SeaRates AI
+          </div>
+        </div>
+      </div>
+
+      {/* Messages area */}
+      <div className="chat-messages">
         {messages.length === 0 && (
-          <div style={{ color: '#888', fontStyle: 'italic', fontSize: '0.9rem' }}>
-            {t('ask_something')}...
+          <div className="chat-welcome">
+            <div className="welcome-icon">🌊</div>
+            <p>
+              Ask me anything about your shipments, container tracking,
+              vessel schedules, freight rates, and more.
+            </p>
+            <div className="chat-suggestions">
+              {SUGGESTIONS.map((s, i) => (
+                <button
+                  key={i}
+                  className="suggestion-chip"
+                  onClick={() => sendMessage(s.replace(/^[^\s]+\s/, ''))}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
         )}
+
         {messages.map((msg, idx) => (
-          <div
-            key={idx}
-            style={{
-              textAlign: msg.sender === 'user' ? 'right' : 'left',
-              padding: '0.3rem 0'
-            }}
-          >
-            <strong>{msg.sender === 'user' ? t('you') : t('agent')}:</strong>{' '}
-            <span style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</span>
+          <div key={idx} className={`chat-bubble-wrap ${msg.sender}`}>
+            <div className={`chat-bubble ${msg.isError ? 'error' : ''}`}>
+              {msg.text}
+            </div>
+            <div className="chat-time">{formatTime(msg.time)}</div>
           </div>
         ))}
+
         {loading && (
-          <div style={{ textAlign: 'left', color: '#888', fontStyle: 'italic' }}>
-            <strong>{t('agent')}:</strong> ...
+          <div className="chat-bubble-wrap agent">
+            <div className="chat-typing">
+              <div className="typing-dot" />
+              <div className="typing-dot" />
+              <div className="typing-dot" />
+            </div>
           </div>
         )}
+
         <div ref={bottomRef} />
       </div>
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        <input
-          type="text"
+
+      {/* Input area */}
+      <div className="chat-input-area">
+        <textarea
+          ref={inputRef}
+          className="chat-input"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={t('ask_something')}
-          onKeyDown={(e) => e.key === 'Enter' && send()}
-          style={{ flex: 1, padding: '0.4rem' }}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Ask about shipments, rates, schedules..."
+          rows={1}
           disabled={loading}
         />
-        <button onClick={send} disabled={loading} style={{ padding: '0.4rem 0.8rem' }}>
-          {loading ? '...' : t('send')}
+        <button
+          className="chat-send-btn"
+          onClick={() => sendMessage()}
+          disabled={loading || !input.trim()}
+          title="Send"
+        >
+          ➤
         </button>
       </div>
     </div>

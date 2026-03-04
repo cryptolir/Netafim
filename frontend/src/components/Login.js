@@ -1,12 +1,10 @@
 import React, { useState, useContext } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../contexts/AuthContext';
 
 export default function Login() {
   const { login } = useContext(AuthContext);
-  const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -20,8 +18,8 @@ export default function Login() {
       // After login, navigate based on role.  Decode token or call /auth/me in real app.
       const [, payload] = res.data.token.split('.');
       const { role } = JSON.parse(atob(payload));
-      if (role === 'admin') navigate('/dashboard');
-      else navigate('/client');
+      if (role === 'admin') window.location.href = '/dashboard';
+      else window.location.href = '/client';
     } catch (err) {
       setError(t('invalid_credentials'));
     }

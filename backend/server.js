@@ -10,6 +10,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 
 // Load environment variables from .env file (if present)
 dotenv.config();
@@ -43,13 +44,17 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Catch‑all route for undefined endpoints
-app.use((req, res) => {
-  res.status(404).json({ error: 'Not found' });
+// Serve the React frontend build
+const frontendBuild = path.join(__dirname, '..', 'frontend', 'build');
+app.use(express.static(frontendBuild));
+
+// Catch-all: serve React app for any non-API route (client-side routing)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendBuild, 'index.html'));
 });
 
 // Start the server
 const port = process.env.PORT || 4000;
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Netafim backend server listening on port ${port}`);
 });

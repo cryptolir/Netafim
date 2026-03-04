@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: netafim
+    runtime: node
+    buildCommand: npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend
+    startCommand: node backend/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SEARATES_API_KEY
+        value: your_searates_api_key
+      - key: SAP_API_BASE_URL
+        value: https://sap.example.com/api

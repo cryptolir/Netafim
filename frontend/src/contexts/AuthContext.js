@@ -1,30 +1,32 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState } from 'react';
 
 // Context to hold authentication state and user information.
 export const AuthContext = createContext();
 
-export function AuthProvider({ children }) {
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [user, setUser] = useState(null);
+/**
+ * Decode a JWT token payload synchronously.
+ * Returns null if the token is missing or malformed.
+ */
+function decodeToken(token) {
+  if (!token) return null;
+  try {
+    const [, payload] = token.split('.');
+    return JSON.parse(atob(payload));
+  } catch {
+    return null;
+  }
+}
 
-  // Decode token to get user info (very naive; use jwt-decode library in prod)
-  useEffect(() => {
-    if (token) {
-      try {
-        const [, payload] = token.split('.');
-        const decoded = JSON.parse(atob(payload));
-        setUser(decoded);
-      } catch {
-        setUser(null);
-      }
-    } else {
-      setUser(null);
-    }
-  }, [token]);
+export function AuthProvider({ children }) {
+  const storedToken = localStorage.getItem('token');
+  const [token, setToken] = useState(storedToken);
+  // Initialize user synchronously so ProtectedRoute doesn't flash to /login
+  const [user, setUser] = useState(() => decodeToken(storedToken));
 
   const login = (newToken) => {
     localStorage.setItem('token', newToken);
     setToken(newToken);
+    setUser(decodeToken(newToken));
   };
 
   const logout = () => {

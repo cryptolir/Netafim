@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import netafimLogo from '../netafim-logo.png';
 import axios from 'axios';
+import APP_VERSION from '../version';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../contexts/AuthContext';
 import ChatAgent from './ChatAgent';
@@ -308,6 +309,7 @@ export default function ClientPortal() {
               style={{ padding: '3px 10px', fontSize: 11 }}
             >FR</button>
           </div>
+          <span className="version-badge">v{APP_VERSION}</span>
         </div>
       </nav>
 

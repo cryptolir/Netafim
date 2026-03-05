@@ -4,6 +4,7 @@ import { AuthContext } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import '../App.css';
 import netafimLogo from '../netafim-logo.png';
+import APP_VERSION from '../version';
 
 function formatDate(dateStr) {
   if (!dateStr) return '—';
@@ -73,6 +74,7 @@ export default function Dashboard() {
               style={{ padding: '3px 10px', fontSize: 11 }}
             >FR</button>
           </div>
+          <span className="version-badge">v{APP_VERSION}</span>
         </div>
       </nav>
 

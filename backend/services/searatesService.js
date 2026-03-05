@@ -2,25 +2,33 @@ const axios = require('axios');
 
 const SEARATES_API_KEY = process.env.SEARATES_API_KEY || 'K-3DC3C34F-93AE-40CA-9551-C04DCF963AC6';
 
-// API endpoints
-const TRACKING_ENDPOINT = 'https://tracking.searates.com/get/tracking';
-const SCHEDULES_ENDPOINT = 'https://schedules.searates.com/api/v2/schedules';
+// Correct API endpoints (verified against Searates docs)
+const TRACKING_ENDPOINT = 'https://tracking.searates.com/tracking';
+const SCHEDULES_ENDPOINT = 'https://schedules.searates.com/api/v2/schedules/by-points';
 const AI_CHAT_ENDPOINT = 'https://ai-api.searates.com/client/stream';
 
 /**
  * Track a container by number (or B/L number).
- * Uses the v3 tracking endpoint.
+ * Uses the v3 tracking endpoint: GET /tracking
  * @param {string} number - Container number, B/L, or booking reference
- * @param {string} type - 'container', 'bl', or 'booking' (default: auto-detect)
+ * @param {string} type - 'CT' (container), 'BL' (bill of lading), or null for auto-detect
  */
 async function trackContainer(number, type = null) {
   const params = {
     api_key: SEARATES_API_KEY,
-    number,
-    route: true,
-    ais: true
+    number: number.trim().toUpperCase(),
   };
-  if (type) params.type = type;
+
+  // Auto-detect type if not specified
+  if (type) {
+    params.type = type;
+  } else {
+    // Container numbers are typically 4 letters + 7 digits
+    if (/^[A-Z]{4}\d{7}$/.test(params.number)) {
+      params.type = 'CT';
+    }
+    // Otherwise let the API auto-detect
+  }
 
   const response = await axios.get(TRACKING_ENDPOINT, {
     params,
@@ -40,8 +48,8 @@ async function getSchedules(origin, destination, fromDate, options = {}) {
   const today = new Date().toISOString().split('T')[0];
   const params = {
     api_key: SEARATES_API_KEY,
-    origin: origin || 'ILASH',
-    destination: destination || 'DEHAM',
+    origin: (origin || 'ILASH').toUpperCase(),
+    destination: (destination || 'DEHAM').toUpperCase(),
     from_date: fromDate || today,
     weeks: options.weeks || 4,
     cargo_type: options.cargoType || 'GC',
@@ -79,12 +87,11 @@ async function sendChatMessage(query, clientId = 'netafim_user') {
 
   // The API returns streaming JSON — parse the last complete JSON object
   const text = response.data;
-  // Try to extract the response field from the streamed data
   try {
     const parsed = JSON.parse(text);
     return parsed.response || parsed;
   } catch {
-    // If streaming, extract last JSON line
+    // If streaming, extract last JSON line with a response field
     const lines = text.split('\n').filter(l => l.trim());
     for (let i = lines.length - 1; i >= 0; i--) {
       try {

@@ -41,15 +41,30 @@ function formatDate(dateStr) {
 function TrackingResult({ data }) {
   if (!data) return null;
 
+  // The API returns locations/facilities as arrays; route/events reference them by integer ID
   const metadata = data.metadata || {};
   const route = data.route || {};
   const containers = data.containers || [];
   const vessels = data.vessels || [];
   const container = containers[0] || {};
-  const vessel = vessels[0] || {};
   const events = container.events || [];
+
+  // Build lookup maps by id
+  const locMap = {};
+  (data.locations || []).forEach(l => { locMap[l.id] = l; });
+  const facMap = {};
+  (data.facilities || []).forEach(f => { facMap[f.id] = f; });
+  const vesMap = {};
+  (vessels || []).forEach(v => { vesMap[v.id] = v; });
+
   const pol = route.pol || {};
   const pod = route.pod || {};
+  const polLoc = locMap[pol.location] || {};
+  const podLoc = locMap[pod.location] || {};
+
+  // Pick the most recent vessel
+  const lastVesselEvent = [...events].reverse().find(e => e.vessel);
+  const mainVessel = vesMap[lastVesselEvent?.vessel] || vessels[0] || {};
 
   const status = metadata.status || container.status || 'Unknown';
 
@@ -57,24 +72,24 @@ function TrackingResult({ data }) {
     <div className="tracking-result">
       <div className="tracking-header">
         <div className="container-number">{metadata.number || '—'}</div>
-        <span className={`status-badge ${getStatusClass(status)}`}>{status}</span>
+        <span className={`status-badge ${getStatusClass(status)}`}>{status.replace(/_/g, ' ')}</span>
       </div>
 
       {/* Route visual */}
-      {(pol.location || pod.location) && (
+      {(polLoc.name || podLoc.name) && (
         <div className="route-visual">
           <div className="route-port">
-            <div className="port-code">{pol.location?.locode || '—'}</div>
-            <div className="port-name">{pol.location?.name || 'Origin'}</div>
+            <div className="port-code">{polLoc.locode || '—'}</div>
+            <div className="port-name">{polLoc.name || 'Origin'}</div>
             <div className="port-date">{formatDate(pol.date)}</div>
           </div>
           <div className="route-arrow">
             <div className="route-line" />
-            {vessel.name && <div className="route-vessel">🚢 {vessel.name}</div>}
+            {mainVessel.name && <div className="route-vessel">🚢 {mainVessel.name}</div>}
           </div>
           <div className="route-port">
-            <div className="port-code">{pod.location?.locode || '—'}</div>
-            <div className="port-name">{pod.location?.name || 'Destination'}</div>
+            <div className="port-code">{podLoc.locode || '—'}</div>
+            <div className="port-name">{podLoc.name || 'Destination'}</div>
             <div className="port-date">
               {pod.predictive_eta ? `ETA: ${formatDate(pod.predictive_eta)}` : formatDate(pod.date)}
             </div>
@@ -90,16 +105,16 @@ function TrackingResult({ data }) {
             <div className="meta-value">{metadata.sealine_name}</div>
           </div>
         )}
-        {vessel.name && (
+        {mainVessel.name && (
           <div className="meta-item">
             <div className="meta-label">Vessel</div>
-            <div className="meta-value">{vessel.name}</div>
+            <div className="meta-value">{mainVessel.name}</div>
           </div>
         )}
-        {container.iso_code && (
+        {container.size_type && (
           <div className="meta-item">
             <div className="meta-label">Container Type</div>
-            <div className="meta-value">{container.iso_code}</div>
+            <div className="meta-value">{container.size_type}</div>
           </div>
         )}
         {metadata.updated_at && (
@@ -108,27 +123,41 @@ function TrackingResult({ data }) {
             <div className="meta-value">{formatDate(metadata.updated_at)}</div>
           </div>
         )}
+        {metadata.api_calls && (
+          <div className="meta-item">
+            <div className="meta-label">API Calls Remaining</div>
+            <div className="meta-value">{metadata.api_calls.remaining} / {metadata.api_calls.total}</div>
+          </div>
+        )}
       </div>
 
       {/* Event timeline */}
       {events.length > 0 && (
         <>
           <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--gray-700)', marginBottom: 12 }}>
-            Event History
+            Shipment Events
           </div>
           <div className="timeline">
-            {events.slice(0, 10).map((ev, i) => (
-              <div
-                key={i}
-                className={`timeline-event ${ev.actual ? 'actual' : ''} ${i === 0 ? 'latest' : ''}`}
-              >
-                <div className="event-date">{formatDate(ev.date)}</div>
-                <div className="event-desc">{ev.description || ev.event_code}</div>
-                <div className="event-location">
-                  {ev.location?.name}{ev.facility?.name ? ` · ${ev.facility.name}` : ''}
+            {events.map((ev, i) => {
+              const evLoc = locMap[ev.location] || {};
+              const evFac = facMap[ev.facility] || {};
+              const evVes = vesMap[ev.vessel] || {};
+              return (
+                <div
+                  key={i}
+                  className={`timeline-event ${ev.actual ? 'actual' : 'estimated'} ${i === events.length - 1 ? 'latest' : ''}`}
+                >
+                  <div className="event-date">{formatDate(ev.date)}{!ev.actual ? ' (est.)' : ''}</div>
+                  <div className="event-desc">{ev.description || ev.event_code}</div>
+                  <div className="event-location">
+                    {evLoc.name || ''}
+                    {evFac.name ? ` · ${evFac.name}` : ''}
+                    {evVes.name ? ` · 🚢 ${evVes.name}` : ''}
+                    {ev.voyage ? ` · Voyage ${ev.voyage}` : ''}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}
@@ -222,7 +251,9 @@ export default function ClientPortal() {
       const res = await axios.get(`/api/containers/track/${encodeURIComponent(trackingNumber.trim())}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setTrackingData(res.data);
+      // Searates API returns { status, data: { metadata, locations, ... } }
+      // Pass the inner 'data' object to TrackingResult
+      setTrackingData(res.data.data || res.data);
     } catch (err) {
       setTrackingError(err.response?.data?.error || 'Failed to fetch tracking information. Please check the container number.');
     } finally {

@@ -231,6 +231,8 @@ export default function ClientPortal() {
   const [trackingData, setTrackingData] = useState(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
   const [trackingError, setTrackingError] = useState(null);
+  // History of all containers tracked this session (for port-click panel)
+  const [trackedContainers, setTrackedContainers] = useState([]);
 
   // Schedules state
   const [schedOrigin, setSchedOrigin] = useState('ILASH');
@@ -254,7 +256,31 @@ export default function ClientPortal() {
       });
       // Searates API returns { status, data: { metadata, locations, ... } }
       // Pass the inner 'data' object to TrackingResult
-      setTrackingData(res.data.data || res.data);
+      const innerData = res.data.data || res.data;
+      setTrackingData(innerData);
+      // Accumulate into session history for the map port-click panel
+      const route = innerData?.route || {};
+      const locations = innerData?.locations || [];
+      const locMap = {};
+      locations.forEach(l => { locMap[l.id] = l; });
+      const polLoc = locMap[route.pol?.location];
+      const podLoc = locMap[route.pod?.location];
+      const metadata = innerData?.metadata || {};
+      const container = (innerData?.containers || [])[0] || {};
+      setTrackedContainers(prev => {
+        const existing = prev.find(c => c.number === trackingNumber.trim().toUpperCase());
+        if (existing) return prev; // don't duplicate
+        return [...prev, {
+          number: trackingNumber.trim().toUpperCase(),
+          status: metadata.status || container.status || 'UNKNOWN',
+          carrier: metadata.carrier_name || metadata.carrier_scac || '—',
+          polCode: route.pol?.locode || polLoc?.locode || '',
+          podCode: route.pod?.locode || podLoc?.locode || '',
+          polName: polLoc?.name || route.pol?.locode || '—',
+          podName: podLoc?.name || route.pod?.locode || '—',
+          eta: route.pod?.date || '—',
+        }];
+      });
     } catch (err) {
       setTrackingError(err.response?.data?.error || 'Failed to fetch tracking information. Please check the container number.');
     } finally {
@@ -477,6 +503,7 @@ export default function ClientPortal() {
             <ShippingMap
               trackingData={trackingData}
               schedulesData={schedulesData}
+              trackedContainers={trackedContainers}
             />
           </div>
 

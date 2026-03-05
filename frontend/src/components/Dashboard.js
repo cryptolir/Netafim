@@ -3,6 +3,7 @@ import axios from 'axios';
 import { AuthContext } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import '../App.css';
+import netafimLogo from '../netafim-logo.jpg';
 
 function formatDate(dateStr) {
   if (!dateStr) return '—';
@@ -54,8 +55,7 @@ export default function Dashboard() {
     <div className="app-shell">
       <nav className="top-nav">
         <div className="nav-brand">
-          <span className="anchor-icon">⚓</span>
-          Netafim Logistics
+          <img src={netafimLogo} alt="Netafim" className="nav-logo-img" />
         </div>
         <div className="nav-spacer" />
         <div className="nav-user">

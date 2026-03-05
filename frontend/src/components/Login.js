@@ -3,6 +3,7 @@ import axios from 'axios';
 import { AuthContext } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import '../App.css';
+import netafimLogo from '../netafim-logo.jpg';
 
 export default function Login() {
   const { login } = useContext(AuthContext);
@@ -33,8 +34,7 @@ export default function Login() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-logo">
-          <span className="ship-icon">⚓</span>
-          <h1>Netafim</h1>
+          <img src={netafimLogo} alt="Netafim" className="login-logo-img" />
           <p>Logistics &amp; Supply Chain Portal</p>
         </div>
 

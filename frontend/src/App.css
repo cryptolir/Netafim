@@ -86,6 +86,15 @@ body {
   margin-bottom: 8px;
 }
 
+.login-logo-img {
+  width: 200px;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto 12px;
+  object-fit: contain;
+}
+
 .login-logo h1 {
   font-size: 24px;
   font-weight: 700;
@@ -211,6 +220,13 @@ body {
 }
 
 .nav-brand .anchor-icon { font-size: 20px; }
+
+.nav-logo-img {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
 
 .nav-tabs {
   display: flex;

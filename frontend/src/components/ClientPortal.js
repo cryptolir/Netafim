@@ -1,4 +1,5 @@
 import React, { useState, useContext } from 'react';
+import netafimLogo from '../netafim-logo.jpg';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../contexts/AuthContext';
@@ -257,8 +258,7 @@ export default function ClientPortal() {
       {/* Top navigation */}
       <nav className="top-nav">
         <div className="nav-brand">
-          <span className="anchor-icon">⚓</span>
-          Netafim Logistics
+          <img src={netafimLogo} alt="Netafim" className="nav-logo-img" />
         </div>
         <div className="nav-spacer" />
         <div className="nav-user">

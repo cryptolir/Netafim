@@ -197,7 +197,7 @@ body {
 }
 
 .top-nav {
-  background: var(--navy);
+  background: linear-gradient(to right, #ffffff 0%, #d0dff0 22%, #1a3a5c 55%, var(--navy) 100%);
   color: var(--white);
   height: 60px;
   display: flex;
@@ -222,10 +222,13 @@ body {
 .nav-brand .anchor-icon { font-size: 20px; }
 
 .nav-logo-img {
-  height: 32px;
+  height: 36px;
   width: auto;
   object-fit: contain;
   display: block;
+  /* Remove any background box — logo renders directly on gradient */
+  background: transparent;
+  mix-blend-mode: multiply;
 }
 
 .nav-tabs {

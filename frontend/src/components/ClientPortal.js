@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import netafimLogo from '../netafim-logo.jpg';
+import netafimLogo from '../netafim-logo.png';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../contexts/AuthContext';

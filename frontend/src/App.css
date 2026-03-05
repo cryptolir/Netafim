@@ -226,9 +226,7 @@ body {
   width: auto;
   object-fit: contain;
   display: block;
-  /* Remove any background box — logo renders directly on gradient */
   background: transparent;
-  mix-blend-mode: multiply;
 }
 
 .nav-tabs {

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { AuthContext } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import '../App.css';
-import netafimLogo from '../netafim-logo.jpg';
+import netafimLogo from '../netafim-logo.png';
 
 function formatDate(dateStr) {
   if (!dateStr) return '—';

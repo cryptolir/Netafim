@@ -267,6 +267,27 @@ export default function ClientPortal() {
       const podLoc = locMap[route.pod?.location];
       const metadata = innerData?.metadata || {};
       const container = (innerData?.containers || [])[0] || {};
+      // Build full list of all ports this container touched (for dynamic map markers)
+      const allPortsForContainer = [];
+      const seenLoc = new Set();
+      // Add POL and POD first
+      if (polLoc && polLoc.locode && !seenLoc.has(polLoc.locode)) {
+        seenLoc.add(polLoc.locode);
+        allPortsForContainer.push({ ...polLoc, role: 'pol' });
+      }
+      if (podLoc && podLoc.locode && !seenLoc.has(podLoc.locode)) {
+        seenLoc.add(podLoc.locode);
+        allPortsForContainer.push({ ...podLoc, role: 'pod' });
+      }
+      // Add all event locations
+      (container.events || []).forEach(ev => {
+        const loc = locMap[ev.location];
+        if (loc && loc.locode && !seenLoc.has(loc.locode)) {
+          seenLoc.add(loc.locode);
+          allPortsForContainer.push({ ...loc, role: 'waypoint' });
+        }
+      });
+
       setTrackedContainers(prev => {
         const existing = prev.find(c => c.number === trackingNumber.trim().toUpperCase());
         if (existing) return prev; // don't duplicate
@@ -274,11 +295,18 @@ export default function ClientPortal() {
           number: trackingNumber.trim().toUpperCase(),
           status: metadata.status || container.status || 'UNKNOWN',
           carrier: metadata.carrier_name || metadata.carrier_scac || '—',
-          polCode: route.pol?.locode || polLoc?.locode || '',
-          podCode: route.pod?.locode || podLoc?.locode || '',
-          polName: polLoc?.name || route.pol?.locode || '—',
-          podName: podLoc?.name || route.pod?.locode || '—',
-          eta: route.pod?.date || '—',
+          polCode: polLoc?.locode || '',
+          podCode: podLoc?.locode || '',
+          polName: polLoc?.name || '—',
+          podName: podLoc?.name || '—',
+          polCountry: polLoc?.country || '',
+          podCountry: podLoc?.country || '',
+          polLat: polLoc?.lat,
+          polLng: polLoc?.lng,
+          podLat: podLoc?.lat,
+          podLng: podLoc?.lng,
+          eta: route.pod?.predictive_eta || route.pod?.date || '—',
+          ports: allPortsForContainer, // all ports this container touched
         }];
       });
     } catch (err) {

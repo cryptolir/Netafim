@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../contexts/AuthContext';
 import ChatAgent from './ChatAgent';
+import ShippingMap from './ShippingMap';
 
 // Common Netafim port codes for quick selection
 const NETAFIM_PORTS = [
@@ -429,6 +430,21 @@ export default function ClientPortal() {
               {schedulesError && <div className="error-state">⚠️ {schedulesError}</div>}
               {schedulesData && <SchedulesResult data={schedulesData} />}
             </div>
+          </div>
+
+          {/* Interactive Map */}
+          <div className="section-card map-card">
+            <div className="section-header">
+              <div className="section-icon">🗺️</div>
+              <div>
+                <div className="section-title">Live Shipping Map</div>
+                <div className="section-subtitle">Interactive vessel positions, port network &amp; route visualization</div>
+              </div>
+            </div>
+            <ShippingMap
+              trackingData={trackingData}
+              schedulesData={schedulesData}
+            />
           </div>
 
         </div>

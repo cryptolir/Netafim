@@ -17,7 +17,8 @@ async function trackContainer(number, type = null) {
   const params = {
     api_key: SEARATES_API_KEY,
     number,
-    route: true
+    route: true,
+    ais: true
   };
   if (type) params.type = type;
 

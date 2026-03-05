@@ -40,6 +40,30 @@ router.get('/schedules', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/containers/ports
+ * Returns coordinates for Netafim's common ports for map display.
+ */
+router.get('/ports', authenticateToken, async (req, res) => {
+  const NETAFIM_PORTS = [
+    { code: 'ILASH', name: 'Ashdod', country: 'Israel', lat: 31.8167, lng: 34.6333 },
+    { code: 'ILHFA', name: 'Haifa', country: 'Israel', lat: 32.8192, lng: 34.9983 },
+    { code: 'DEHAM', name: 'Hamburg', country: 'Germany', lat: 53.5461, lng: 9.9663 },
+    { code: 'NLRTM', name: 'Rotterdam', country: 'Netherlands', lat: 51.9225, lng: 4.4792 },
+    { code: 'BEANR', name: 'Antwerp', country: 'Belgium', lat: 51.2194, lng: 4.4025 },
+    { code: 'FRFOS', name: 'Fos-sur-Mer', country: 'France', lat: 43.4375, lng: 4.9444 },
+    { code: 'ESVLC', name: 'Valencia', country: 'Spain', lat: 39.4561, lng: -0.3311 },
+    { code: 'CNSHA', name: 'Shanghai', country: 'China', lat: 31.2304, lng: 121.4737 },
+    { code: 'USLAX', name: 'Los Angeles', country: 'USA', lat: 33.7395, lng: -118.2596 },
+    { code: 'AEJEA', name: 'Jebel Ali', country: 'UAE', lat: 24.9857, lng: 55.0272 },
+    { code: 'SGSIN', name: 'Singapore', country: 'Singapore', lat: 1.2897, lng: 103.8501 },
+    { code: 'GBFXT', name: 'Felixstowe', country: 'UK', lat: 51.9553, lng: 1.3516 },
+    { code: 'TRIST', name: 'Istanbul', country: 'Turkey', lat: 41.0082, lng: 28.9784 },
+    { code: 'EGPSD', name: 'Port Said', country: 'Egypt', lat: 31.2565, lng: 32.2841 },
+  ];
+  return res.json({ ports: NETAFIM_PORTS });
+});
+
 // Legacy route support
 router.get('/:containerId', authenticateToken, async (req, res) => {
   const { containerId } = req.params;

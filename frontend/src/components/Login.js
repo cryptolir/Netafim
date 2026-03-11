@@ -12,6 +12,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const sessionExpired = new URLSearchParams(window.location.search).get('expired') === '1';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,6 +39,11 @@ export default function Login() {
           <p>Logistics &amp; Supply Chain Portal</p>
         </div>
 
+        {sessionExpired && (
+          <div className="login-error" style={{ background: '#fff3cd', color: '#856404', borderColor: '#ffc107' }}>
+            ⏱ Your session has expired. Please sign in again.
+          </div>
+        )}
         {error && <div className="login-error">{error}</div>}
 
         <form className="login-form" onSubmit={handleSubmit}>

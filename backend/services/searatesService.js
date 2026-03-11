@@ -4,7 +4,9 @@ const SEARATES_API_KEY = process.env.SEARATES_API_KEY || 'K-3DC3C34F-93AE-40CA-9
 
 // Correct API endpoints (verified against Searates docs)
 const TRACKING_ENDPOINT = 'https://tracking.searates.com/tracking';
+const AIR_TRACKING_ENDPOINT = 'https://tracking.searates.com/air';
 const SCHEDULES_ENDPOINT = 'https://schedules.searates.com/api/v2/schedules/by-points';
+const FLIGHT_SCHEDULES_ENDPOINT = 'https://schedules.searates.com/api/flight/v1/schedules/daily';
 const AI_CHAT_ENDPOINT = 'https://ai-api.searates.com/client/stream';
 
 /**
@@ -38,6 +40,25 @@ async function trackContainer(number, type = null) {
 }
 
 /**
+ * Track an air shipment by Air Waybill (AWB) number.
+ * Uses: GET https://tracking.searates.com/air
+ * @param {string} awb - Air Waybill number e.g. '020-17363006'
+ */
+async function trackAirShipment(awb) {
+  const params = {
+    api_key: SEARATES_API_KEY,
+    number: awb.trim(),
+    path: true
+  };
+
+  const response = await axios.get(AIR_TRACKING_ENDPOINT, {
+    params,
+    timeout: 30000
+  });
+  return response.data;
+}
+
+/**
  * Fetch ship schedules between two ports.
  * @param {string} origin - Origin port UN/LOCODE (e.g. 'ILASH')
  * @param {string} destination - Destination port UN/LOCODE (e.g. 'DEHAM')
@@ -59,6 +80,35 @@ async function getSchedules(origin, destination, fromDate, options = {}) {
   };
 
   const response = await axios.get(SCHEDULES_ENDPOINT, {
+    params,
+    timeout: 30000
+  });
+  return response.data;
+}
+
+/**
+ * Fetch flight schedules between two airports.
+ * Uses: GET https://schedules.searates.com/api/flight/v1/schedules/daily
+ * @param {string} origin - Origin airport IATA code (e.g. 'TLV')
+ * @param {string} destination - Destination airport IATA code (e.g. 'CDG')
+ * @param {string} departureDate - Date in yyyy-mm-dd format
+ * @param {object} options - Additional options (directOnly, airlinesCodes)
+ */
+async function getFlightSchedules(origin, destination, departureDate, options = {}) {
+  const today = new Date().toISOString().split('T')[0];
+  const params = {
+    api_key: SEARATES_API_KEY,
+    origin_airport_code: (origin || 'TLV').toUpperCase(),
+    destination_airport_code: (destination || 'CDG').toUpperCase(),
+    departure_date: departureDate || today,
+    direct_only: options.directOnly || false,
+  };
+
+  if (options.airlinesCodes) {
+    params.airlines_codes = options.airlinesCodes;
+  }
+
+  const response = await axios.get(FLIGHT_SCHEDULES_ENDPOINT, {
     params,
     timeout: 30000
   });
@@ -105,6 +155,8 @@ async function sendChatMessage(query, clientId = 'netafim_user') {
 
 module.exports = {
   trackContainer,
+  trackAirShipment,
   getSchedules,
+  getFlightSchedules,
   sendChatMessage
 };

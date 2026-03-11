@@ -1210,3 +1210,230 @@ body {
   white-space: nowrap;
   user-select: none;
 }
+
+
+/* ============================================================
+   AIR SECTION STYLES
+   ============================================================ */
+
+.air-section {
+  border-top: 3px solid #0369a1;
+}
+
+.air-section .section-header {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 14px 20px;
+}
+
+.air-section .section-icon {
+  background: linear-gradient(135deg, #0369a1, #0ea5e9);
+  color: #fff;
+  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.air-mode-badge {
+  margin-left: auto;
+  background: linear-gradient(135deg, #0369a1, #0ea5e9);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  align-self: center;
+}
+
+.air-tracking-subsection {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.air-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  color: var(--gray-400);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.air-chip {
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  border-color: #bae6fd !important;
+}
+
+.air-chip:hover {
+  background: #bae6fd !important;
+}
+
+.btn-air {
+  background: linear-gradient(135deg, #0369a1, #0ea5e9) !important;
+}
+
+.btn-air:hover:not(:disabled) {
+  background: linear-gradient(135deg, #075985, #0284c7) !important;
+}
+
+.air-context-badge {
+  display: inline-block;
+  background: rgba(3, 105, 161, 0.15);
+  color: #0369a1;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 10px;
+  margin-left: 6px;
+  border: 1px solid rgba(3, 105, 161, 0.3);
+}
+
+/* ============================================================
+   SHIPMENT DETAILS FORM
+   ============================================================ */
+
+.shipment-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-600);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.form-input {
+  padding: 8px 12px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--gray-800);
+  background: var(--white);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--ocean);
+  box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.1);
+}
+
+.sap-field {
+  border-left: 3px solid #0369a1;
+  background: #f8fbff;
+}
+
+.cost-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.cost-currency {
+  position: absolute;
+  left: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-500);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cost-input {
+  padding-left: 24px !important;
+}
+
+.cost-variance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.cost-variance.over-budget {
+  background: var(--red-light);
+  color: var(--red);
+  border: 1px solid #fca5a5;
+}
+
+.cost-variance.under-budget {
+  background: var(--green-light);
+  color: var(--green);
+  border: 1px solid #86efac;
+}
+
+.sap-source-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--gray-500);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  line-height: 1.5;
+}
+
+.sap-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #0369a1;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Right panel layout — chat + form stacked */
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  padding-bottom: 16px;
+}
+
+.right-panel .chat-phone {
+  flex: 1;
+  min-height: 500px;
+}
+
+.right-panel .section-card {
+  flex-shrink: 0;
+}

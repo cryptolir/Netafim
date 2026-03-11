@@ -5,17 +5,20 @@ import { useTranslation } from 'react-i18next';
 
 const SUGGESTIONS = [
   '🚢 Where is container MSCU1234567?',
+  '✈️ Air cargo rates Tel Aviv to Paris?',
   '📅 Schedules from Ashdod to Hamburg?',
+  '✈️ Flight schedules TLV to CDG?',
   '💰 Freight rate Shanghai to Rotterdam?',
-  '📦 What is FCL vs LCL shipping?',
+  '📦 What is the difference between air and sea freight?',
   '🌍 Sea distance Haifa to Rotterdam?',
+  '✈️ Air transit time TLV to JFK?',
 ];
 
 function formatTime(date) {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function ChatAgent() {
+export default function ChatAgent({ airTrackingData, airSchedulesData }) {
   const { token } = useContext(AuthContext);
   const { t } = useTranslation();
   const [messages, setMessages] = useState([]);
@@ -28,6 +31,29 @@ export default function ChatAgent() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  // Build context summary from air data to inject into chat
+  const buildAirContext = () => {
+    const parts = [];
+    if (airTrackingData) {
+      const info = airTrackingData.data || airTrackingData;
+      const meta = airTrackingData.metadata || {};
+      const awb = meta.request_parameters?.number || '';
+      const status = info.status || '';
+      const from = info.from?.iata_code || '';
+      const to = info.to?.iata_code || '';
+      const airline = meta.airline?.name || '';
+      if (awb) parts.push(`Active air tracking: AWB ${awb}, ${airline}, ${from}→${to}, status: ${status}.`);
+    }
+    if (airSchedulesData) {
+      const trips = Array.isArray(airSchedulesData) ? airSchedulesData
+        : airSchedulesData.data?.trips || airSchedulesData.trips || airSchedulesData.data || [];
+      if (Array.isArray(trips) && trips.length > 0) {
+        parts.push(`Air schedules loaded: ${trips.length} flight options available.`);
+      }
+    }
+    return parts.join(' ');
+  };
 
   const sendMessage = async (text) => {
     const msgText = text || input.trim();
@@ -43,10 +69,16 @@ export default function ChatAgent() {
       content: m.text
     }));
 
+    // Inject air context if relevant
+    const airContext = buildAirContext();
+    const enrichedMessage = airContext
+      ? `[Context: ${airContext}]\n\n${msgText}`
+      : msgText;
+
     try {
       const res = await axios.post(
         '/api/chat',
-        { message: msgText, history, sessionId: sessionId.current },
+        { message: enrichedMessage, history, sessionId: sessionId.current },
         { headers: { Authorization: `Bearer ${token}` }, timeout: 35000 }
       );
       const reply = res.data.reply || res.data.answer || JSON.stringify(res.data);
@@ -71,6 +103,9 @@ export default function ChatAgent() {
     }
   };
 
+  // Show air context badge if air data is loaded
+  const hasAirContext = !!(airTrackingData || airSchedulesData);
+
   return (
     <div className="chat-phone">
       {/* Phone header / notch */}
@@ -81,6 +116,9 @@ export default function ChatAgent() {
           <div className="agent-status">
             <span className="online-dot" />
             Powered by SeaRates AI
+            {hasAirContext && (
+              <span className="air-context-badge">✈️ Air data loaded</span>
+            )}
           </div>
         </div>
       </div>
@@ -91,8 +129,8 @@ export default function ChatAgent() {
           <div className="chat-welcome">
             <div className="welcome-icon">🌊</div>
             <p>
-              Ask me anything about your shipments, container tracking,
-              vessel schedules, freight rates, and more.
+              Ask me anything about your shipments — sea or air — including container tracking,
+              AWB tracking, vessel &amp; flight schedules, freight rates, and more.
             </p>
             <div className="chat-suggestions">
               {SUGGESTIONS.map((s, i) => (
@@ -138,7 +176,7 @@ export default function ChatAgent() {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask about shipments, rates, schedules..."
+          placeholder="Ask about sea or air shipments, rates, schedules..."
           rows={1}
           disabled={loading}
         />

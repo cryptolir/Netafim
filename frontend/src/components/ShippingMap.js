@@ -38,19 +38,28 @@ const vesselIcon = L.divIcon({
 });
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-function greatCirclePoints(lat1, lng1, lat2, lng2, n = 60) {
+function greatCirclePoints(lat1, lng1, lat2, lng2, n = 80) {
   const toRad = d => (d * Math.PI) / 180;
   const toDeg = r => (r * 180) / Math.PI;
+  // Convert to 3D unit vectors
+  const φ1 = toRad(lat1), λ1 = toRad(lng1);
+  const φ2 = toRad(lat2), λ2 = toRad(lng2);
+  const x1 = Math.cos(φ1) * Math.cos(λ1), y1 = Math.cos(φ1) * Math.sin(λ1), z1 = Math.sin(φ1);
+  const x2 = Math.cos(φ2) * Math.cos(λ2), y2 = Math.cos(φ2) * Math.sin(λ2), z2 = Math.sin(φ2);
+  // Angular distance
+  const dot = Math.min(1, Math.max(-1, x1*x2 + y1*y2 + z1*z2));
+  const Ω = Math.acos(dot);
+  if (Ω < 1e-10) return [[lat1, lng1], [lat2, lng2]];
   const pts = [];
   for (let i = 0; i <= n; i++) {
     const f = i / n;
-    const φ1 = toRad(lat1), λ1 = toRad(lng1);
-    const φ2 = toRad(lat2), λ2 = toRad(lng2);
-    const A = Math.sin((1 - f) * φ1), B = Math.sin(f * φ2);
-    const C = Math.cos((1 - f) * φ1) * Math.cos(λ1), D = Math.cos(f * φ2) * Math.cos(λ2);
-    const E = Math.cos((1 - f) * φ1) * Math.sin(λ1), F = Math.cos(f * φ2) * Math.sin(λ2);
-    const x = C + D, y = E + F, z = A + B;
-    pts.push([toDeg(Math.atan2(z, Math.sqrt(x * x + y * y))), toDeg(Math.atan2(y, x))]);
+    const sinΩ = Math.sin(Ω);
+    const A = Math.sin((1 - f) * Ω) / sinΩ;
+    const B = Math.sin(f * Ω) / sinΩ;
+    const x = A * x1 + B * x2;
+    const y = A * y1 + B * y2;
+    const z = A * z1 + B * z2;
+    pts.push([toDeg(Math.atan2(z, Math.sqrt(x*x + y*y))), toDeg(Math.atan2(y, x))]);
   }
   return pts;
 }
@@ -228,7 +237,11 @@ export default function ShippingMap({ trackingData, schedulesData, trackedContai
   // Extract tracking geo data
   const trackingGeo = useMemo(() => {
     if (!trackingData) return null;
-    const d = trackingData.data ? trackingData.data : trackingData;
+    // ClientPortal already stores the inner data object (res.data.data)
+    // but guard against double-wrapping just in case
+    const d = (trackingData.locations || trackingData.route) ? trackingData
+      : (trackingData.data?.locations || trackingData.data?.route) ? trackingData.data
+      : trackingData;
     const locations = d.locations || [];
     const vessels = d.vessels || [];
     const containers = d.containers || [];

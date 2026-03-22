@@ -21,10 +21,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Custom middleware to log requests (replace with proper logging)
+// Custom middleware to log requests
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
+});
+
+// ── Health check (must be registered BEFORE auth-protected routes) ──────────
+// Railway pings this path to determine if the deployment is healthy.
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Route modules
@@ -39,11 +45,6 @@ app.use('/api/orders', ordersRoutes);
 app.use('/api/containers', searatesRoutes);
 app.use('/api/chat', chatRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
 // Serve the React frontend build
 const frontendBuild = path.join(__dirname, '..', 'frontend', 'build');
 app.use(express.static(frontendBuild));
@@ -53,8 +54,43 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(frontendBuild, 'index.html'));
 });
 
+// Global error handler — prevents unhandled errors from crashing the process
+app.use((err, req, res, next) => {
+  console.error(`[ERROR] ${err.stack || err.message}`);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
 // Start the server
 const port = process.env.PORT || 4000;
-app.listen(port, '0.0.0.0', () => {
+const server = app.listen(port, '0.0.0.0', () => {
   console.log(`Netafim backend server listening on port ${port}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Health check available at: /api/health`);
+});
+
+// Graceful shutdown — required for Railway to restart cleanly
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
+  server.close(() => {
+    console.log('Server closed.');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received. Shutting down gracefully...');
+  server.close(() => {
+    console.log('Server closed.');
+    process.exit(0);
+  });
+});
+
+// Catch unhandled promise rejections to prevent silent crashes
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
 });

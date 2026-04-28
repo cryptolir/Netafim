@@ -1,4 +1,5 @@
 import React, { useState, useContext } from 'react';
+import BusinessChat from './BusinessChat';
 import netafimLogo from '../netafim-logo.png';
 import axios from 'axios';
 import APP_VERSION from '../version';
@@ -645,6 +646,7 @@ function ShipmentDetailsForm({ sapData }) {
 export default function ClientPortal() {
   const { token, logout } = useContext(AuthContext);
   const { t, i18n } = useTranslation();
+  const [activeView, setActiveView] = useState('portal'); // 'portal' | 'chat'
 
   // Container tracking state
   const [trackingNumber, setTrackingNumber] = useState('');
@@ -819,6 +821,16 @@ export default function ClientPortal() {
         <div className="nav-brand">
           <img src={netafimLogo} alt="Netafim" className="nav-logo-img" />
         </div>
+        <div className="nav-tabs">
+          <button
+            className={`nav-tab ${activeView === 'portal' ? 'active' : ''}`}
+            onClick={() => setActiveView('portal')}
+          >🚢 Logistics Portal</button>
+          <button
+            className={`nav-tab ${activeView === 'chat' ? 'active' : ''}`}
+            onClick={() => setActiveView('chat')}
+          >💬 Business Chat</button>
+        </div>
         <div className="nav-spacer" />
         <div className="nav-user">
           <span>Client Portal</span>
@@ -839,8 +851,9 @@ export default function ClientPortal() {
         </div>
       </nav>
 
-      {/* Split layout */}
-      <div className="split-layout">
+      {/* Conditional view */}
+      {activeView === 'chat' && <BusinessChat />}
+      {activeView === 'portal' && <div className="split-layout">
         {/* LEFT PANEL — App features */}
         <div className="left-panel">
 
@@ -1146,7 +1159,7 @@ export default function ClientPortal() {
           />
           <ShipmentDetailsForm sapData={null} />
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

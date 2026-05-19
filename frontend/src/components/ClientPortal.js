@@ -6,6 +6,7 @@ import APP_VERSION from '../version';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../contexts/AuthContext';
 import ChatAgent from './ChatAgent';
+import AllContainersList from './AllContainersList';
 import ShippingMap from './ShippingMap';
 
 // Common Netafim port codes for quick selection
@@ -1380,6 +1381,7 @@ export default function ClientPortal() {
             airTrackingData={airTrackingData}
             airSchedulesData={airSchedulesData}
           />
+          <AllContainersList />
           <ShipmentDetailsForm sapData={null} />
         </div>
       </div>}

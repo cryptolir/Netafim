@@ -357,6 +357,7 @@ function AirTrackingResult({ data }) {
   const events = info.events || [];
   const airline = meta.airline || {};
   const status = info.status || 'Unknown';
+  const isFallback = data.isFallback === true;
 
   const statusColor = (s) => {
     if (!s) return '#94a3b8';
@@ -366,6 +367,43 @@ function AirTrackingResult({ data }) {
     if (l === 'arrived') return '#d97706';
     return '#94a3b8';
   };
+
+  // ── Fallback card (MIND data only) ──────────────────────────────────────
+  if (isFallback) {
+    return (
+      <div className="tracking-result">
+        <div className="tracking-header">
+          <div className="container-number" style={{ fontSize: 14 }}>✈️ {info.awb || meta.request_parameters?.number || '—'}</div>
+          <span className="status-badge" style={{ background: '#2563eb', color: '#fff', borderRadius: 6, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>In Transit</span>
+        </div>
+        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#92400e', marginBottom: 10 }}>
+          ⚠️ Live tracking unavailable for this AWB. Showing shipment file data.
+        </div>
+        <div className="tracking-meta">
+          <div className="meta-item">
+            <div className="meta-label">AWB</div>
+            <div className="meta-value" style={{ fontFamily: 'monospace' }}>{info.awb || '—'}</div>
+          </div>
+          <div className="meta-item">
+            <div className="meta-label">Shipment No.</div>
+            <div className="meta-value" style={{ fontFamily: 'monospace' }}>{info.shipmentNo || '—'}</div>
+          </div>
+          <div className="meta-item">
+            <div className="meta-label">Destination</div>
+            <div className="meta-value">{info.destination || '—'}</div>
+          </div>
+          <div className="meta-item">
+            <div className="meta-label">Forwarder</div>
+            <div className="meta-value">{info.forwarder || '—'}</div>
+          </div>
+          <div className="meta-item">
+            <div className="meta-label">Type</div>
+            <div className="meta-value">{info.type || '—'}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="tracking-result">

@@ -36,15 +36,65 @@ router.get('/track/:number', authenticateToken, async (req, res) => {
 /**
  * GET /api/containers/air/track/:awb
  * Track an air shipment by Air Waybill (AWB) number.
+ * Falls back to MIND air shipments data when the live API is unavailable.
  * Example: /api/containers/air/track/020-17363006
  */
 router.get('/air/track/:awb', authenticateToken, async (req, res) => {
   const { awb } = req.params;
+
+  // Helper: build a structured fallback response from MIND data
+  const buildFallback = (s) => ({
+    success: true,
+    status_code: 'FALLBACK',
+    isFallback: true,
+    metadata: {
+      request_parameters: { number: s.awb },
+      airline: {},
+      updated_at: new Date().toISOString(),
+    },
+    data: {
+      status: 'In Transit',
+      awb: s.awb,
+      shipmentNo: s.shipmentNo,
+      type: s.type,
+      forwarder: s.forwarder,
+      destination: s.destination,
+      from: null,
+      to: { name: s.destination },
+      routes: [],
+      events: [],
+    },
+  });
+
   try {
     const data = await trackAirShipment(awb);
+
+    // If the API returned no useful data (WRONG_NUMBER, API_KEY_ACCESS_DENIED, empty data)
+    const isEmpty = !data || !data.success ||
+      ['WRONG_NUMBER', 'API_KEY_ACCESS_DENIED', 'NO_DATA'].includes(data.status_code) ||
+      (data.data && Object.keys(data.data).length === 0);
+
+    if (isEmpty) {
+      const shipments = loadAirShipments();
+      const normalised = awb.replace(/\s/g, '').toLowerCase();
+      const match = shipments.find(s =>
+        s.awb.replace(/\s/g, '').toLowerCase() === normalised ||
+        s.shipmentNo === awb.trim()
+      );
+      if (match) return res.json(buildFallback(match));
+    }
+
     return res.json(data);
   } catch (err) {
     console.error('Air tracking error:', err.response?.data || err.message);
+    // Try fallback before returning an error
+    const shipments = loadAirShipments();
+    const normalised = awb.replace(/\s/g, '').toLowerCase();
+    const match = shipments.find(s =>
+      s.awb.replace(/\s/g, '').toLowerCase() === normalised ||
+      s.shipmentNo === awb.trim()
+    );
+    if (match) return res.json(buildFallback(match));
     return res.status(500).json({ error: 'Failed to fetch air shipment tracking information', details: err.message });
   }
 });

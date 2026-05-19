@@ -3,15 +3,51 @@ import axios from 'axios';
 import { AuthContext } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 
-const SUGGESTIONS = [
-  '🚢 Where is container MSCU1234567?',
-  '✈️ Air cargo rates Tel Aviv to Paris?',
-  '📅 Schedules from Ashdod to Hamburg?',
-  '✈️ Flight schedules TLV to CDG?',
-  '💰 Freight rate Shanghai to Rotterdam?',
-  '📦 What is the difference between air and sea freight?',
-  '🌍 Sea distance Haifa to Rotterdam?',
-  '✈️ Air transit time TLV to JFK?',
+// ── Preset questions based on real shipment data ──────────────────────────
+// Sea shipments: MINDTESTforNir11.3.2026SCAC.xlsx
+// Air shipments: MINDairshipments23.3.26.xlsx
+const PRESET_GROUPS = [
+  {
+    label: '🚢 Sea Shipments',
+    chips: [
+      { display: 'Where is container MSNU8656572?',      text: 'Where is container MSNU8656572? It is on shipment 3007308 via MSC.' },
+      { display: 'Status of shipment 4011676?',          text: 'What is the status of sea shipment 4011676? It has 4 containers: JZPU8021158, JXLU6468215, ZCSU6927417, GAOU7588197 on ZIMU carrier.' },
+      { display: 'Track container TXGU5057347',          text: 'Track container TXGU5057347 — it is on MBL MEDUKM055225, forwarder Rosenthal, carrier MSC.' },
+      { display: 'Containers in shipment 3007337?',      text: 'What containers are in shipment 3007337? Forwarder is GOA, carrier MAEU.' },
+      { display: 'Who is the forwarder for 3007394?',    text: 'Who is the forwarder for shipment 3007394 and what carrier is being used?' },
+      { display: 'MBL for shipment 4011660?',            text: 'What is the MBL number for shipment 4011660 handled by DHL?' },
+    ]
+  },
+  {
+    label: '✈️ Air Shipments',
+    chips: [
+      { display: 'Track AWB 700-5128021300',             text: 'Track air shipment AWB 700-5128021300 going to Jakarta, shipment 2440348.' },
+      { display: 'Status of AWB 716-0188634?',           text: 'What is the status of air shipment AWB 716-0188634 to Cape Town, shipment 2440321?' },
+      { display: 'Track AWB 114-64228592 to Lima',       text: 'Track air shipment AWB 114-64228592 to Lima, Peru — shipment 2440328, forwarder Fritz.' },
+      { display: 'Which air shipments go to Jakarta?',   text: 'Which air shipments are destined for Jakarta?' },
+      { display: 'Air shipments handled by FC?',         text: 'Which air shipments are handled by forwarder FC?' },
+    ]
+  },
+  {
+    label: '📊 Summary & Analysis',
+    chips: [
+      { display: 'List all active sea shipments',        text: 'List all active sea shipments with their shipment numbers, containers, and forwarders.' },
+      { display: 'List all air shipments',               text: 'List all air shipments with AWB numbers, destinations, and forwarders.' },
+      { display: 'Which forwarder handles most cargo?',  text: 'Which freight forwarder handles the most shipments across sea and air?' },
+      { display: 'Shipments on ZIMU carrier?',           text: 'Which shipments are using ZIMU as the carrier?' },
+      { display: 'How many containers in transit?',      text: 'How many sea containers are currently in transit and what are their numbers?' },
+    ]
+  },
+];
+
+// Flat list for the welcome screen (show a sample from each group)
+const WELCOME_CHIPS = [
+  PRESET_GROUPS[0].chips[0],
+  PRESET_GROUPS[0].chips[1],
+  PRESET_GROUPS[1].chips[0],
+  PRESET_GROUPS[1].chips[1],
+  PRESET_GROUPS[2].chips[0],
+  PRESET_GROUPS[2].chips[3],
 ];
 
 function formatTime(date) {
@@ -24,6 +60,7 @@ export default function ChatAgent({ airTrackingData, airSchedulesData }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showAllPresets, setShowAllPresets] = useState(false);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
   const sessionId = useRef(`netafim_${Date.now()}`);
@@ -63,6 +100,7 @@ export default function ChatAgent({ airTrackingData, airSchedulesData }) {
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setLoading(true);
+    setShowAllPresets(false);
 
     const history = messages.map(m => ({
       role: m.sender === 'user' ? 'user' : 'assistant',
@@ -103,7 +141,6 @@ export default function ChatAgent({ airTrackingData, airSchedulesData }) {
     }
   };
 
-  // Show air context badge if air data is loaded
   const hasAirContext = !!(airTrackingData || airSchedulesData);
 
   return (
@@ -132,17 +169,81 @@ export default function ChatAgent({ airTrackingData, airSchedulesData }) {
               Ask me anything about your shipments — sea or air — including container tracking,
               AWB tracking, vessel &amp; flight schedules, freight rates, and more.
             </p>
+
+            {/* Quick question chips — welcome screen */}
             <div className="chat-suggestions">
-              {SUGGESTIONS.map((s, i) => (
+              {WELCOME_CHIPS.map((chip, i) => (
                 <button
                   key={i}
                   className="suggestion-chip"
-                  onClick={() => sendMessage(s.replace(/^[^\s]+\s/, ''))}
+                  onClick={() => sendMessage(chip.text)}
                 >
-                  {s}
+                  {chip.display}
                 </button>
               ))}
             </div>
+
+            {/* "More questions" expandable panel */}
+            <button
+              className="preset-toggle-btn"
+              onClick={() => setShowAllPresets(v => !v)}
+            >
+              {showAllPresets ? '▲ Hide preset questions' : '▼ More preset questions'}
+            </button>
+
+            {showAllPresets && (
+              <div className="preset-groups">
+                {PRESET_GROUPS.map((group, gi) => (
+                  <div key={gi} className="preset-group">
+                    <div className="preset-group-label">{group.label}</div>
+                    <div className="preset-group-chips">
+                      {group.chips.map((chip, ci) => (
+                        <button
+                          key={ci}
+                          className="suggestion-chip"
+                          onClick={() => sendMessage(chip.text)}
+                        >
+                          {chip.display}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Floating preset button when conversation is active */}
+        {messages.length > 0 && (
+          <div className="preset-float-wrap">
+            <button
+              className="preset-float-btn"
+              onClick={() => setShowAllPresets(v => !v)}
+              title="Preset questions"
+            >
+              💬 Presets
+            </button>
+            {showAllPresets && (
+              <div className="preset-dropdown">
+                {PRESET_GROUPS.map((group, gi) => (
+                  <div key={gi} className="preset-group">
+                    <div className="preset-group-label">{group.label}</div>
+                    <div className="preset-group-chips">
+                      {group.chips.map((chip, ci) => (
+                        <button
+                          key={ci}
+                          className="suggestion-chip"
+                          onClick={() => sendMessage(chip.text)}
+                        >
+                          {chip.display}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

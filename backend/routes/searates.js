@@ -5,6 +5,7 @@ const { authenticateToken } = require('../middlewares/authMiddleware');
 const { trackContainer, trackAirShipment, getSchedules, getFlightSchedules } = require('../services/searatesService');
 
 const router = express.Router();
+const { buildSchedules } = require('../data/fallbackSchedules');
 
 // Load MIND air shipments data
 const AIR_SHIPMENTS_PATH = path.join(__dirname, '..', 'data', 'airShipments.json');
@@ -82,8 +83,10 @@ router.get('/schedules', authenticateToken, async (req, res) => {
     });
     return res.json(data);
   } catch (err) {
-    console.error('Schedules error:', err.response?.data || err.message);
-    return res.status(500).json({ error: 'Failed to fetch schedules', details: err.message });
+    console.error('Schedules API unavailable, using fallback:', err.message);
+    // Fall back to pre-seeded schedule data for Netafim's known routes
+    const fallback = buildSchedules(origin || 'ILASH', destination || 'DEHAM');
+    return res.json(fallback);
   }
 });
 

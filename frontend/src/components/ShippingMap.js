@@ -58,6 +58,142 @@ const planeIcon = L.divIcon({
 });
 
 // ── Helpers ────────────────────────────────────────────────────────────────
+
+// Interpolate n points along a straight segment between two [lat,lng] points
+function interpSegment(p1, p2, n = 20) {
+  const pts = [];
+  for (let i = 0; i <= n; i++) {
+    const f = i / n;
+    pts.push([p1[0] + f * (p2[0] - p1[0]), p1[1] + f * (p2[1] - p1[1])]);
+  }
+  return pts;
+}
+
+// Key maritime waypoints (straits, canals, capes)
+const WP = {
+  suez_n:    [30.7,  32.35],  // Suez Canal North (Port Said)
+  suez_s:    [27.9,  33.6],   // Suez Canal South (Suez)
+  bab_el_m:  [12.6,  43.4],   // Bab el-Mandeb
+  aden:      [11.5,  45.0],   // Gulf of Aden
+  hormuz:    [26.6,  56.5],   // Strait of Hormuz
+  malacca_w: [5.5,   98.7],   // Malacca Strait West
+  malacca_e: [1.25, 104.0],   // Malacca Strait East (Singapore)
+  gibraltar: [35.95, -5.45],  // Strait of Gibraltar
+  cape_good: [-34.4, 18.5],   // Cape of Good Hope
+  cape_horn: [-55.9,-67.3],   // Cape Horn
+  dover:     [51.1,   1.4],   // Dover Strait
+  kiel:      [54.5,  10.2],   // Kiel Canal area
+  panama_a:  [9.35, -79.9],   // Panama Canal Atlantic
+  panama_p:  [8.9,  -79.5],   // Panama Canal Pacific
+  med_e:     [34.0,  28.0],   // Eastern Mediterranean
+  med_w:     [36.5,   0.0],   // Western Mediterranean
+  indian_mid:[0.0,   75.0],   // Mid Indian Ocean
+  s_atlantic:[-20.0,-15.0],   // South Atlantic
+  n_atlantic:[35.0, -40.0],   // North Atlantic
+  pacific_n: [35.0, 160.0],   // North Pacific
+  pacific_s: [-10.0,175.0],   // South Pacific
+};
+
+// Determine which ocean/sea region a point is in
+function region(lat, lng) {
+  if (lng >= -6 && lng <= 37 && lat >= 30 && lat <= 47)   return 'med';       // Mediterranean
+  if (lng >= 32 && lng <= 44 && lat >= 12 && lat <= 31)   return 'red_sea';   // Red Sea
+  if (lng >= 44 && lng <= 60 && lat >= 10 && lat <= 30)   return 'gulf_aden'; // Gulf of Aden / Arabian Sea
+  if (lng >= 44 && lng <= 78 && lat >= 0  && lat <= 30)   return 'indian_nw'; // NW Indian Ocean
+  if (lng >= 78 && lng <= 110 && lat >= -10 && lat <= 25) return 'indian_ne'; // NE Indian Ocean
+  if (lng >= 100 && lng <= 130 && lat >= -10 && lat <= 25) return 'sea_china'; // South China Sea
+  if (lng >= 110 && lat >= -50 && lat <= -10)              return 'indian_s';  // Southern Indian Ocean
+  if (lng >= -20 && lng <= 32 && lat >= -40 && lat <= 15)  return 'w_africa';  // West Africa / S Atlantic
+  if (lng >= -80 && lng <= -30 && lat >= -60 && lat <= 15) return 's_america'; // South America coast
+  if (lng >= -80 && lng <= -60 && lat >= 15 && lat <= 35)  return 'caribbean'; // Caribbean
+  if (lng >= -80 && lng <= -5  && lat >= 35 && lat <= 65)  return 'n_atlantic'; // North Atlantic
+  if (lat >= 20 && lat <= 65 && lng >= 130 && lng <= 180)  return 'n_pacific';  // North Pacific
+  return 'open';
+}
+
+// Build a waypoint path for a sea route between two points
+function seaRouteWaypoints(lat1, lng1, lat2, lng2) {
+  const r1 = region(lat1, lng1);
+  const r2 = region(lat2, lng2);
+  const start = [lat1, lng1];
+  const end   = [lat2, lng2];
+
+  // Helper: build path through a list of named waypoints
+  const via = (...keys) => [start, ...keys.map(k => WP[k]), end];
+
+  // Mediterranean <-> Red Sea / Indian Ocean: through Suez
+  if ((r1 === 'med' && (r2 === 'red_sea' || r2 === 'gulf_aden' || r2 === 'indian_nw' || r2 === 'indian_ne' || r2 === 'sea_china' || r2 === 'indian_s'))
+   || (r2 === 'med' && (r1 === 'red_sea' || r1 === 'gulf_aden' || r1 === 'indian_nw' || r1 === 'indian_ne' || r1 === 'sea_china' || r1 === 'indian_s'))) {
+    if (r1 === 'med' || r2 === 'med') {
+      const medPt = r1 === 'med' ? start : end;
+      const otherPt = r1 === 'med' ? end : start;
+      const otherR = r1 === 'med' ? r2 : r1;
+      const suezPath = [WP.suez_n, WP.suez_s, WP.bab_el_m, WP.aden];
+      if (otherR === 'sea_china' || otherR === 'indian_ne') {
+        return r1 === 'med'
+          ? [start, ...suezPath, WP.indian_mid, WP.malacca_w, WP.malacca_e, end]
+          : [start, WP.malacca_e, WP.malacca_w, WP.indian_mid, ...suezPath.reverse(), end];
+      }
+      return r1 === 'med'
+        ? [start, ...suezPath, end]
+        : [start, WP.aden, WP.bab_el_m, WP.suez_s, WP.suez_n, end];
+    }
+  }
+
+  // North Atlantic <-> Mediterranean: through Gibraltar
+  if ((r1 === 'n_atlantic' && r2 === 'med') || (r2 === 'n_atlantic' && r1 === 'med')) {
+    return r1 === 'n_atlantic' ? via('gibraltar') : via('gibraltar');
+  }
+
+  // West Africa / S Atlantic <-> Mediterranean: through Gibraltar
+  if ((r1 === 'w_africa' && r2 === 'med') || (r2 === 'w_africa' && r1 === 'med')) {
+    return via('gibraltar');
+  }
+
+  // Mediterranean <-> North Atlantic / Europe
+  if ((r1 === 'med' && r2 === 'n_atlantic') || (r2 === 'med' && r1 === 'n_atlantic')) {
+    return via('gibraltar');
+  }
+
+  // Indian Ocean <-> East Asia (through Malacca)
+  if ((r1 === 'indian_nw' || r1 === 'indian_ne' || r1 === 'gulf_aden') && (r2 === 'sea_china' || r2 === 'n_pacific')) {
+    return via('malacca_w', 'malacca_e');
+  }
+  if ((r2 === 'indian_nw' || r2 === 'indian_ne' || r2 === 'gulf_aden') && (r1 === 'sea_china' || r1 === 'n_pacific')) {
+    return via('malacca_e', 'malacca_w');
+  }
+
+  // Europe / N Atlantic <-> S America / Caribbean
+  if ((r1 === 'n_atlantic' && (r2 === 's_america' || r2 === 'caribbean'))
+   || (r2 === 'n_atlantic' && (r1 === 's_america' || r1 === 'caribbean'))) {
+    return via('n_atlantic');
+  }
+
+  // Around Cape of Good Hope (Africa <-> Indian Ocean / Asia when Suez not applicable)
+  if ((r1 === 'w_africa' || r1 === 's_america') && (r2 === 'indian_s' || r2 === 'indian_nw' || r2 === 'sea_china')) {
+    return via('cape_good', 'indian_mid');
+  }
+  if ((r2 === 'w_africa' || r2 === 's_america') && (r1 === 'indian_s' || r1 === 'indian_nw' || r1 === 'sea_china')) {
+    return via('indian_mid', 'cape_good');
+  }
+
+  // Default: straight interpolation (same ocean basin)
+  return [start, end];
+}
+
+// Build a smooth polyline through sea-lane waypoints
+function seaRoutePoints(lat1, lng1, lat2, lng2, segPts = 30) {
+  const waypoints = seaRouteWaypoints(lat1, lng1, lat2, lng2);
+  const pts = [];
+  for (let i = 0; i < waypoints.length - 1; i++) {
+    const seg = interpSegment(waypoints[i], waypoints[i + 1], segPts);
+    if (i > 0) seg.shift(); // avoid duplicate point at junction
+    pts.push(...seg);
+  }
+  return pts;
+}
+
+// Keep greatCirclePoints for air routes only
 function greatCirclePoints(lat1, lng1, lat2, lng2, n = 80) {
   const toRad = d => (d * Math.PI) / 180;
   const toDeg = r => (r * 180) / Math.PI;
@@ -355,10 +491,10 @@ export default function ShippingMap({
     return pts;
   }, [trackingGeo, airTrackingGeo]);
 
-  // Sea route arc
+  // Sea route arc — uses sea-lane waypoints instead of straight great-circle
   const trackingArc = useMemo(() => {
     if (!trackingGeo?.polLoc?.lat || !trackingGeo?.podLoc?.lat) return null;
-    return greatCirclePoints(
+    return seaRoutePoints(
       trackingGeo.polLoc.lat, trackingGeo.polLoc.lng,
       trackingGeo.podLoc.lat, trackingGeo.podLoc.lng
     );
@@ -412,7 +548,7 @@ export default function ShippingMap({
         transitTime: s.transit_time,
         originName: origin.port_name || oPort.name,
         destName: dest.port_name || dPort.name,
-        arc: greatCirclePoints(oPort.lat, oPort.lng, dPort.lat, dPort.lng),
+        arc: seaRoutePoints(oPort.lat, oPort.lng, dPort.lat, dPort.lng),
         originCoords: [oPort.lat, oPort.lng],
         destCoords: [dPort.lat, dPort.lng],
       };

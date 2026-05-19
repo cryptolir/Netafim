@@ -1,0 +1,23 @@
+[
+  {
+    "awb": "700-5128021300",
+    "shipmentNo": "2440348",
+    "type": "Air Export",
+    "forwarder": "FC",
+    "destination": "Jakarta"
+  },
+  {
+    "awb": "716-0188634",
+    "shipmentNo": "2440321",
+    "type": "Air Export",
+    "forwarder": "FC",
+    "destination": "Cape Town"
+  },
+  {
+    "awb": "114-64228592",
+    "shipmentNo": "2440328",
+    "type": "Air Export",
+    "forwarder": "Fritz",
+    "destination": "Lima"
+  }
+]

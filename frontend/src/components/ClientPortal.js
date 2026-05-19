@@ -681,6 +681,11 @@ export default function ClientPortal() {
   const [airSchedulesLoading, setAirSchedulesLoading] = useState(false);
   const [airSchedulesError, setAirSchedulesError] = useState(null);
 
+  // MIND air shipments state
+  const [mindAirShipments, setMindAirShipments] = useState([]);
+  const [mindAirLoading, setMindAirLoading] = useState(false);
+  const [mindAirQuery, setMindAirQuery] = useState('');
+
   // Documents state
   const [docsData, setDocsData] = useState(null);
   const [docsLoading, setDocsLoading] = useState(false);
@@ -839,6 +844,25 @@ export default function ClientPortal() {
       setAirSchedulesLoading(false);
     }
   };
+
+  // ── Fetch MIND air shipments ──────────────────────────────────────────
+  const fetchMindAirShipments = async (q) => {
+    setMindAirLoading(true);
+    try {
+      const res = await axios.get('/api/containers/air/shipments', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: q ? { q } : {}
+      });
+      setMindAirShipments(res.data.shipments || []);
+    } catch (err) {
+      setMindAirShipments([]);
+    } finally {
+      setMindAirLoading(false);
+    }
+  };
+
+  // Load MIND air shipments on mount
+  React.useEffect(() => { fetchMindAirShipments(''); }, []);
 
   return (
     <div className="app-shell">
@@ -1139,6 +1163,63 @@ export default function ClientPortal() {
                 )}
                 {airTrackingError && <div className="error-state">⚠️ {airTrackingError}</div>}
                 {airTrackingData && <AirTrackingResult data={airTrackingData} />}
+              </div>
+
+              {/* ── MIND Air Shipments ── */}
+              <div className="mind-air-section">
+                <div className="mind-air-header">
+                  <span className="mind-air-title">📦 MIND Air Shipments</span>
+                  <div className="mind-air-search">
+                    <input
+                      type="text"
+                      value={mindAirQuery}
+                      onChange={e => {
+                        setMindAirQuery(e.target.value);
+                        fetchMindAirShipments(e.target.value);
+                      }}
+                      placeholder="Search by shipment no., AWB, destination…"
+                      className="mind-air-input"
+                    />
+                  </div>
+                </div>
+                {mindAirLoading && <div className="docs-loading">Loading…</div>}
+                {!mindAirLoading && mindAirShipments.length === 0 && (
+                  <div className="docs-empty">No shipments found</div>
+                )}
+                {!mindAirLoading && mindAirShipments.length > 0 && (
+                  <table className="mind-air-table">
+                    <thead>
+                      <tr>
+                        <th>Shipment No.</th>
+                        <th>AWB</th>
+                        <th>Forwarder</th>
+                        <th>Destination</th>
+                        <th>Type</th>
+                        <th>Track</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {mindAirShipments.map(s => (
+                        <tr key={s.shipmentNo}>
+                          <td style={{ fontWeight: 700, fontFamily: 'monospace', color: 'var(--navy)' }}>{s.shipmentNo}</td>
+                          <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{s.awb}</td>
+                          <td>{s.forwarder}</td>
+                          <td>{s.destination}</td>
+                          <td><span className="air-badge">{s.type}</span></td>
+                          <td>
+                            <button
+                              className="btn-track-awb"
+                              onClick={() => {
+                                setAwbNumber(s.awb);
+                                setTimeout(() => fetchAirTracking(), 50);
+                              }}
+                            >✈️ Track</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
 
               <div className="air-divider"><span>Flight Schedule Search</span></div>

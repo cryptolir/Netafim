@@ -1,8 +1,20 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const { authenticateToken } = require('../middlewares/authMiddleware');
 const { trackContainer, trackAirShipment, getSchedules, getFlightSchedules } = require('../services/searatesService');
 
 const router = express.Router();
+
+// Load MIND air shipments data
+const AIR_SHIPMENTS_PATH = path.join(__dirname, '..', 'data', 'airShipments.json');
+function loadAirShipments() {
+  try {
+    return JSON.parse(fs.readFileSync(AIR_SHIPMENTS_PATH, 'utf8'));
+  } catch (e) {
+    return [];
+  }
+}
 
 /**
  * GET /api/containers/track/:number
@@ -34,6 +46,25 @@ router.get('/air/track/:awb', authenticateToken, async (req, res) => {
     console.error('Air tracking error:', err.response?.data || err.message);
     return res.status(500).json({ error: 'Failed to fetch air shipment tracking information', details: err.message });
   }
+});
+
+/**
+ * GET /api/containers/air/shipments
+ * Returns the MIND air shipments list, optionally filtered by query.
+ * Query params: q (search term matching shipmentNo, awb, destination, forwarder)
+ */
+router.get('/air/shipments', authenticateToken, (req, res) => {
+  const q = (req.query.q || '').toLowerCase().trim();
+  let shipments = loadAirShipments();
+  if (q) {
+    shipments = shipments.filter(s =>
+      (s.shipmentNo || '').toLowerCase().includes(q) ||
+      (s.awb || '').toLowerCase().includes(q) ||
+      (s.destination || '').toLowerCase().includes(q) ||
+      (s.forwarder || '').toLowerCase().includes(q)
+    );
+  }
+  return res.json({ shipments, total: shipments.length });
 });
 
 /**

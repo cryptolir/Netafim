@@ -39,6 +39,7 @@ const ordersRoutes = require('./routes/orders');
 const searatesRoutes = require('./routes/searates');
 const chatRoutes = require('./routes/chat');
 const bizChatRoutes = require('./routes/businessChat');
+const documentsRoutes = require('./routes/documents');
 
 // Register routes under /api
 app.use('/api/auth', authRoutes);
@@ -46,6 +47,7 @@ app.use('/api/orders', ordersRoutes);
 app.use('/api/containers', searatesRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/biz-chat', bizChatRoutes);
+app.use('/api/documents', documentsRoutes);
 
 // Serve the React frontend build
 const frontendBuild = path.join(__dirname, '..', 'frontend', 'build');

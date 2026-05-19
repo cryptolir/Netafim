@@ -681,6 +681,29 @@ export default function ClientPortal() {
   const [airSchedulesLoading, setAirSchedulesLoading] = useState(false);
   const [airSchedulesError, setAirSchedulesError] = useState(null);
 
+  // Documents state
+  const [docsData, setDocsData] = useState(null);
+  const [docsLoading, setDocsLoading] = useState(false);
+  const [docsContainerNo, setDocsContainerNo] = useState(null);
+
+  // ── Fetch documents for a container ──────────────────────────────────
+  const fetchDocuments = async (containerNo) => {
+    if (!containerNo) return;
+    setDocsLoading(true);
+    setDocsData(null);
+    setDocsContainerNo(containerNo);
+    try {
+      const res = await axios.get(`/api/documents/${encodeURIComponent(containerNo)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDocsData(res.data);
+    } catch (err) {
+      setDocsData({ containerNo, docs: [] });
+    } finally {
+      setDocsLoading(false);
+    }
+  };
+
   // ── Fetch container tracking ──────────────────────────────────────────
   const fetchTracking = async () => {
     if (!trackingNumber.trim()) return;
@@ -719,6 +742,9 @@ export default function ClientPortal() {
           allPortsForContainer.push({ ...loc, role: 'waypoint' });
         }
       });
+
+      // Auto-fetch documents for the tracked container
+      fetchDocuments(trackingNumber.trim().toUpperCase());
 
       setTrackedContainers(prev => {
         const existing = prev.find(c => c.number === trackingNumber.trim().toUpperCase());
@@ -893,6 +919,75 @@ export default function ClientPortal() {
               )}
               {trackingError && <div className="error-state">⚠️ {trackingError}</div>}
               {trackingData && <TrackingResult data={trackingData} />}
+
+              {/* ── Shipment Documents ── */}
+              {(docsLoading || docsData) && (
+                <div className="docs-section">
+                  <div className="docs-section-header">
+                    <span className="docs-section-title">📎 Shipment Documents</span>
+                    {docsContainerNo && (
+                      <a
+                        href={`/api/documents/all?token=${token}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="docs-view-all-link"
+                        onClick={e => {
+                          e.preventDefault();
+                          // Open all-docs page in new window with auth
+                          const w = window.open('', '_blank');
+                          fetch('/api/documents/all', { headers: { Authorization: `Bearer ${token}` } })
+                            .then(r => r.json())
+                            .then(data => {
+                              const rows = data.map(c =>
+                                `<tr><td colspan="3" style="background:#f0f4ff;font-weight:700;padding:8px 12px">${c.containerNo}</td></tr>` +
+                                c.docs.map(d =>
+                                  `<tr><td style="padding:6px 12px">${d.icon}</td><td style="padding:6px 12px">${d.label}</td><td style="padding:6px 12px"><a href="${d.downloadUrl}" download style="color:#1565c0">Download</a></td></tr>`
+                                ).join('')
+                              ).join('');
+                              w.document.write(`<!DOCTYPE html><html><head><title>All Shipment Documents</title><style>body{font-family:sans-serif;padding:24px}table{border-collapse:collapse;width:100%}td{border-bottom:1px solid #eee}h2{color:#0d2b4e}</style></head><body><h2>All Shipment Documents</h2><table>${rows}</table></body></html>`);
+                              w.document.close();
+                            });
+                        }}
+                      >
+                        View all documents ↗
+                      </a>
+                    )}
+                  </div>
+                  {docsLoading && <div className="docs-loading">Loading documents…</div>}
+                  {docsData && docsData.docs && docsData.docs.length === 0 && (
+                    <div className="docs-empty">No documents found for {docsContainerNo}</div>
+                  )}
+                  {docsData && docsData.docs && docsData.docs.length > 0 && (
+                    <div className="docs-grid">
+                      {docsData.docs.map(doc => (
+                        <a
+                          key={doc.filename}
+                          href={doc.downloadUrl}
+                          className="doc-item"
+                          download={doc.filename}
+                          onClick={e => {
+                            e.preventDefault();
+                            fetch(doc.downloadUrl, { headers: { Authorization: `Bearer ${token}` } })
+                              .then(r => r.blob())
+                              .then(blob => {
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = doc.filename;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                              });
+                          }}
+                        >
+                          <span className="doc-item-icon">{doc.icon}</span>
+                          <span className="doc-item-label">{doc.label}</span>
+                          <span className="doc-item-dl">↓</span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

@@ -55,7 +55,29 @@ function formatDate(dateStr) {
 }
 
 // ── Container Tracking Result ──────────────────────────────────────────────
-function TrackingResult({ data }) {
+function TrackingResult({ data, docsData, docsLoading, token }) {
+  const [previewDoc, setPreviewDoc] = React.useState(null); // { label, blobUrl }
+  const [previewLoading, setPreviewLoading] = React.useState(false);
+
+  const openPreview = async (doc) => {
+    setPreviewLoading(true);
+    try {
+      const res = await fetch(doc.downloadUrl, { headers: { Authorization: `Bearer ${token}` } });
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      setPreviewDoc({ label: doc.label, blobUrl, filename: doc.filename });
+    } catch {
+      alert('Could not load preview.');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const closePreview = () => {
+    if (previewDoc?.blobUrl) URL.revokeObjectURL(previewDoc.blobUrl);
+    setPreviewDoc(null);
+  };
+
   if (!data) return null;
 
   const metadata = data.metadata || {};
@@ -81,9 +103,35 @@ function TrackingResult({ data }) {
   const mainVessel = vesMap[lastVesselEvent?.vessel] || vessels[0] || {};
 
   const status = metadata.status || container.status || 'Unknown';
+  const hasDocs = docsData && docsData.docs && docsData.docs.length > 0;
 
   return (
     <div className="tracking-result">
+      {/* PDF Preview Modal */}
+      {previewDoc && (
+        <div className="doc-preview-overlay" onClick={closePreview}>
+          <div className="doc-preview-modal" onClick={e => e.stopPropagation()}>
+            <div className="doc-preview-header">
+              <span className="doc-preview-title">📄 {previewDoc.label}</span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <a
+                  href={previewDoc.blobUrl}
+                  download={previewDoc.filename}
+                  className="doc-preview-dl-btn"
+                  title="Download"
+                >↓ Download</a>
+                <button className="doc-preview-close" onClick={closePreview}>✕</button>
+              </div>
+            </div>
+            <iframe
+              src={previewDoc.blobUrl}
+              title={previewDoc.label}
+              className="doc-preview-iframe"
+            />
+          </div>
+        </div>
+      )}
+
       <div className="tracking-header">
         <div className="container-number">{metadata.number || '—'}</div>
         <span className={`status-badge ${getStatusClass(status)}`}>{status.replace(/_/g, ' ')}</span>
@@ -143,34 +191,100 @@ function TrackingResult({ data }) {
         )}
       </div>
 
-      {events.length > 0 && (
-        <>
-          <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--gray-700)', marginBottom: 12 }}>
-            Shipment Events
-          </div>
-          <div className="timeline">
-            {events.map((ev, i) => {
-              const evLoc = locMap[ev.location] || {};
-              const evFac = facMap[ev.facility] || {};
-              const evVes = vesMap[ev.vessel] || {};
-              return (
-                <div
-                  key={i}
-                  className={`timeline-event ${ev.actual ? 'actual' : 'estimated'} ${i === events.length - 1 ? 'latest' : ''}`}
-                >
-                  <div className="event-date">{formatDate(ev.date)}{!ev.actual ? ' (est.)' : ''}</div>
-                  <div className="event-desc">{ev.description || ev.event_code}</div>
-                  <div className="event-location">
-                    {evLoc.name || ''}
-                    {evFac.name ? ` · ${evFac.name}` : ''}
-                    {evVes.name ? ` · 🚢 ${evVes.name}` : ''}
-                    {ev.voyage ? ` · Voyage ${ev.voyage}` : ''}
-                  </div>
+      {/* Events + Documents side-by-side */}
+      {(events.length > 0 || docsLoading || hasDocs) && (
+        <div className="events-docs-row">
+          {/* Left: Shipment Events */}
+          {events.length > 0 && (
+            <div className="events-col">
+              <div className="events-col-title">Shipment Events</div>
+              <div className="timeline">
+                {events.map((ev, i) => {
+                  const evLoc = locMap[ev.location] || {};
+                  const evFac = facMap[ev.facility] || {};
+                  const evVes = vesMap[ev.vessel] || {};
+                  return (
+                    <div
+                      key={i}
+                      className={`timeline-event ${ev.actual ? 'actual' : 'estimated'} ${i === events.length - 1 ? 'latest' : ''}`}
+                    >
+                      <div className="event-date">{formatDate(ev.date)}{!ev.actual ? ' (est.)' : ''}</div>
+                      <div className="event-desc">{ev.description || ev.event_code}</div>
+                      <div className="event-location">
+                        {evLoc.name || ''}
+                        {evFac.name ? ` · ${evFac.name}` : ''}
+                        {evVes.name ? ` · 🚢 ${evVes.name}` : ''}
+                        {ev.voyage ? ` · Voyage ${ev.voyage}` : ''}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Right: Shipment Documents */}
+          {(docsLoading || hasDocs) && (
+            <div className="docs-col">
+              <div className="docs-col-header">
+                <span className="docs-col-title">📎 Documents</span>
+                {hasDocs && (
+                  <button
+                    className="docs-view-all-btn"
+                    onClick={() => {
+                      const w = window.open('', '_blank');
+                      fetch('/api/documents/all', { headers: { Authorization: `Bearer ${token}` } })
+                        .then(r => r.json())
+                        .then(allData => {
+                          const rows = allData.map(c =>
+                            `<tr><td colspan="3" style="background:#f0f4ff;font-weight:700;padding:8px 12px">${c.containerNo}</td></tr>` +
+                            c.docs.map(d =>
+                              `<tr><td style="padding:6px 12px">${d.icon}</td><td style="padding:6px 12px">${d.label}</td><td style="padding:6px 12px"><a href="${d.downloadUrl}" download style="color:#1565c0">Download</a></td></tr>`
+                            ).join('')
+                          ).join('');
+                          w.document.write(`<!DOCTYPE html><html><head><title>All Shipment Documents</title><style>body{font-family:sans-serif;padding:24px}table{border-collapse:collapse;width:100%}td{border-bottom:1px solid #eee}h2{color:#0d2b4e}</style></head><body><h2>All Shipment Documents</h2><table>${rows}</table></body></html>`);
+                          w.document.close();
+                        });
+                    }}
+                  >View all ↗</button>
+                )}
+              </div>
+              {docsLoading && <div className="docs-loading">Loading documents…</div>}
+              {hasDocs && (
+                <div className="docs-list">
+                  {docsData.docs.map(doc => (
+                    <div key={doc.filename} className="doc-row">
+                      <span className="doc-row-icon">{doc.icon}</span>
+                      <span className="doc-row-label">{doc.label}</span>
+                      <div className="doc-row-actions">
+                        <button
+                          className="doc-btn doc-btn-preview"
+                          title="Preview"
+                          disabled={previewLoading}
+                          onClick={() => openPreview(doc)}
+                        >👁</button>
+                        <button
+                          className="doc-btn doc-btn-download"
+                          title="Download"
+                          onClick={() => {
+                            fetch(doc.downloadUrl, { headers: { Authorization: `Bearer ${token}` } })
+                              .then(r => r.blob())
+                              .then(blob => {
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url; a.download = doc.filename; a.click();
+                                URL.revokeObjectURL(url);
+                              });
+                          }}
+                        >↓</button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              );
-            })}
-          </div>
-        </>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -942,76 +1056,9 @@ export default function ClientPortal() {
                 </div>
               )}
               {trackingError && <div className="error-state">⚠️ {trackingError}</div>}
-              {trackingData && <TrackingResult data={trackingData} />}
+              {trackingData && <TrackingResult data={trackingData} docsData={docsData} docsLoading={docsLoading} token={token} />}
 
-              {/* ── Shipment Documents ── */}
-              {(docsLoading || docsData) && (
-                <div className="docs-section">
-                  <div className="docs-section-header">
-                    <span className="docs-section-title">📎 Shipment Documents</span>
-                    {docsContainerNo && (
-                      <a
-                        href={`/api/documents/all?token=${token}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="docs-view-all-link"
-                        onClick={e => {
-                          e.preventDefault();
-                          // Open all-docs page in new window with auth
-                          const w = window.open('', '_blank');
-                          fetch('/api/documents/all', { headers: { Authorization: `Bearer ${token}` } })
-                            .then(r => r.json())
-                            .then(data => {
-                              const rows = data.map(c =>
-                                `<tr><td colspan="3" style="background:#f0f4ff;font-weight:700;padding:8px 12px">${c.containerNo}</td></tr>` +
-                                c.docs.map(d =>
-                                  `<tr><td style="padding:6px 12px">${d.icon}</td><td style="padding:6px 12px">${d.label}</td><td style="padding:6px 12px"><a href="${d.downloadUrl}" download style="color:#1565c0">Download</a></td></tr>`
-                                ).join('')
-                              ).join('');
-                              w.document.write(`<!DOCTYPE html><html><head><title>All Shipment Documents</title><style>body{font-family:sans-serif;padding:24px}table{border-collapse:collapse;width:100%}td{border-bottom:1px solid #eee}h2{color:#0d2b4e}</style></head><body><h2>All Shipment Documents</h2><table>${rows}</table></body></html>`);
-                              w.document.close();
-                            });
-                        }}
-                      >
-                        View all documents ↗
-                      </a>
-                    )}
-                  </div>
-                  {docsLoading && <div className="docs-loading">Loading documents…</div>}
-                  {docsData && docsData.docs && docsData.docs.length === 0 && (
-                    <div className="docs-empty">No documents found for {docsContainerNo}</div>
-                  )}
-                  {docsData && docsData.docs && docsData.docs.length > 0 && (
-                    <div className="docs-grid">
-                      {docsData.docs.map(doc => (
-                        <a
-                          key={doc.filename}
-                          href={doc.downloadUrl}
-                          className="doc-item"
-                          download={doc.filename}
-                          onClick={e => {
-                            e.preventDefault();
-                            fetch(doc.downloadUrl, { headers: { Authorization: `Bearer ${token}` } })
-                              .then(r => r.blob())
-                              .then(blob => {
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                a.download = doc.filename;
-                                a.click();
-                                URL.revokeObjectURL(url);
-                              });
-                          }}
-                        >
-                          <span className="doc-item-icon">{doc.icon}</span>
-                          <span className="doc-item-label">{doc.label}</span>
-                          <span className="doc-item-dl">↓</span>
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+
             </div>
           </div>
 

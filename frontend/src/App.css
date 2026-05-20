@@ -286,12 +286,78 @@ body {
 .btn-logout:hover { background: rgba(255,255,255,0.2); }
 
 /* ============================================================
+   NETWORK OVERVIEW STAT BAR
+   ============================================================ */
+.network-stat-bar {
+  display: flex;
+  gap: 0;
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-200);
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+
+.network-stat-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 12px 14px;
+  border-top: 3px solid transparent;
+  border-right: 1px solid var(--gray-200);
+  background: var(--gray-50);
+  transition: background 0.15s;
+}
+
+.network-stat-box:last-child {
+  border-right: none;
+}
+
+.network-stat-box.highlight {
+  background: var(--sky);
+  border-top-color: var(--ocean);
+}
+
+.network-stat-box:not(.highlight) {
+  border-top-color: var(--navy);
+}
+
+.nsb-icon {
+  font-size: 26px;
+  margin-bottom: 6px;
+  line-height: 1;
+}
+
+.nsb-value {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--navy);
+  line-height: 1;
+  margin-bottom: 4px;
+  font-family: 'Inter', sans-serif;
+}
+
+.network-stat-box.highlight .nsb-value {
+  color: var(--ocean);
+}
+
+.nsb-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-500);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* ============================================================
    SPLIT LAYOUT — MAIN CONTENT
    ============================================================ */
 .split-layout {
   flex: 1;
   display: flex;
-  height: calc(100vh - 60px);
+  height: calc(100vh - 156px);
   overflow: hidden;
 }
 

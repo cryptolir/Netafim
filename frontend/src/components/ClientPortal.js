@@ -1056,6 +1056,38 @@ export default function ClientPortal() {
 
       {/* Conditional view */}
       {activeView === 'chat' && <BusinessChat />}
+
+      {/* ── Network Overview Stat Boxes ── */}
+      {activeView === 'portal' && (
+        <div className="network-stat-bar">
+          <div className="network-stat-box">
+            <div className="nsb-icon">📦</div>
+            <div className="nsb-value">14</div>
+            <div className="nsb-label">TOTAL CONTAINERS</div>
+          </div>
+          <div className="network-stat-box highlight">
+            <div className="nsb-icon">🚢</div>
+            <div className="nsb-value">14</div>
+            <div className="nsb-label">ACTIVE SHIPMENTS</div>
+          </div>
+          <div className="network-stat-box">
+            <div className="nsb-icon">🗺️</div>
+            <div className="nsb-value">11</div>
+            <div className="nsb-label">SHIPPING IN PROGRESS</div>
+          </div>
+          <div className="network-stat-box">
+            <div className="nsb-icon">✈️</div>
+            <div className="nsb-value">3</div>
+            <div className="nsb-label">AIR SHIPMENTS</div>
+          </div>
+          <div className="network-stat-box">
+            <div className="nsb-icon">🤝</div>
+            <div className="nsb-value">6</div>
+            <div className="nsb-label">FREIGHT FORWARDERS</div>
+          </div>
+        </div>
+      )}
+
       {activeView === 'portal' && <div className="split-layout">
         {/* LEFT PANEL — App features */}
         <div className="left-panel">

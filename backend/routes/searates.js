@@ -58,6 +58,7 @@ router.get('/air/track/:awb', authenticateToken, async (req, res) => {
       shipmentNo: s.shipmentNo,
       type: s.type,
       forwarder: s.forwarder,
+      origin: s.origin || 'Tel Aviv (TLV)',
       destination: s.destination,
       from: null,
       to: { name: s.destination },

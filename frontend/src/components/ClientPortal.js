@@ -184,12 +184,7 @@ function TrackingResult({ data, docsData, docsLoading, token }) {
             <div className="meta-value">{formatDate(metadata.updated_at)}</div>
           </div>
         )}
-        {metadata.api_calls && (
-          <div className="meta-item">
-            <div className="meta-label">API Calls Remaining</div>
-            <div className="meta-value">{metadata.api_calls.remaining} / {metadata.api_calls.total}</div>
-          </div>
-        )}
+
       </div>
 
       {/* Events + Documents side-by-side */}

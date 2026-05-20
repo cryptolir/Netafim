@@ -4,20 +4,23 @@
     "shipmentNo": "2440348",
     "type": "Air Export",
     "forwarder": "FC",
-    "destination": "Jakarta"
+    "origin": "Tel Aviv (TLV)",
+    "destination": "Jakarta (CGK)"
   },
   {
     "awb": "716-0188634",
     "shipmentNo": "2440321",
     "type": "Air Export",
     "forwarder": "FC",
-    "destination": "Cape Town"
+    "origin": "Tel Aviv (TLV)",
+    "destination": "Cape Town (CPT)"
   },
   {
     "awb": "114-64228592",
     "shipmentNo": "2440328",
     "type": "Air Export",
     "forwarder": "Fritz",
-    "destination": "Lima"
+    "origin": "Tel Aviv (TLV)",
+    "destination": "Lima (LIM)"
   }
 ]

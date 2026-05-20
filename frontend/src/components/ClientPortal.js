@@ -55,8 +55,145 @@ function formatDate(dateStr) {
   } catch { return dateStr; }
 }
 
-// ── Container Tracking Result ──────────────────────────────────────────────
-function TrackingResult({ data, docsData, docsLoading, token }) {
+/// ── Network Stat Bar with Popup Summaries ──────────────────────────────
+const STAT_POPUPS = {
+  containers: {
+    title: 'Total Containers',
+    icon: '📦',
+    rows: [
+      ['Shipment', 'MBL', 'Forwarder', 'Containers'],
+      ['3007308', 'MEDUXK675106', 'GOA', 'MSNU8656572'],
+      ['3007373', 'HLCUIZ1260201827', 'GOA', 'HLBU1333628'],
+      ['2034143', 'EBKG16025165', 'GOA', 'FFAU5533113'],
+      ['3007337', '265858161', 'GOA', 'TCKU7806690'],
+      ['4011660', 'VIEA40642', 'DHL', 'MSBU4228120'],
+      ['4011676', 'ZIMUIAH985650', 'FRITZ', 'JZPU8021158, JXLU6468215, ZCSU6927417, GAOU7588197'],
+      ['2034114', 'MEDUKM055225', 'Rosenthal', 'TXGU5057347'],
+      ['2034110', '721336190', 'FRITZ', 'GCXU5788346'],
+      ['3007394', 'VIE0244556', 'UNICARGO', 'APHU7018733'],
+      ['3007315', '6443358570', 'UNICARGO', 'CSLU2384211'],
+      ['3007321', 'ZIMUMER26803264', 'BDL', 'ZCSU6524670'],
+    ],
+  },
+  active: {
+    title: 'Active Shipments',
+    icon: '🚢',
+    rows: [
+      ['Shipment', 'Type', 'Forwarder', 'Reference'],
+      ['3007308', 'Sea', 'GOA', 'MEDUXK675106'],
+      ['3007373', 'Sea', 'GOA', 'HLCUIZ1260201827'],
+      ['2034143', 'Sea', 'GOA', 'EBKG16025165'],
+      ['3007337', 'Sea', 'GOA', '265858161'],
+      ['4011660', 'Sea', 'DHL', 'VIEA40642'],
+      ['4011676', 'Sea', 'FRITZ', 'ZIMUIAH985650'],
+      ['2034114', 'Sea', 'Rosenthal', 'MEDUKM055225'],
+      ['2034110', 'Sea', 'FRITZ', '721336190'],
+      ['3007394', 'Sea', 'UNICARGO', 'VIE0244556'],
+      ['3007315', 'Sea', 'UNICARGO', '6443358570'],
+      ['3007321', 'Sea', 'BDL', 'ZIMUMER26803264'],
+      ['2440348', 'Air', 'FC', 'AWB 700-5128021300'],
+      ['2440321', 'Air', 'FC', 'AWB 716-0188634'],
+      ['2440328', 'Air', 'Fritz', 'AWB 114-64228592'],
+    ],
+  },
+  inprogress: {
+    title: 'Shipping In Progress',
+    icon: '🗺️',
+    rows: [
+      ['Shipment', 'MBL', 'Carrier', 'Forwarder'],
+      ['3007308', 'MEDUXK675106', 'MSC', 'GOA'],
+      ['3007373', 'HLCUIZ1260201827', 'Hapag-Lloyd', 'GOA'],
+      ['2034143', 'EBKG16025165', 'MSC', 'GOA'],
+      ['3007337', '265858161', 'Maersk', 'GOA'],
+      ['4011660', 'VIEA40642', 'MSC', 'DHL'],
+      ['4011676', 'ZIMUIAH985650', 'ZIM', 'FRITZ'],
+      ['2034114', 'MEDUKM055225', 'MSC', 'Rosenthal'],
+      ['2034110', '721336190', 'Maersk', 'FRITZ'],
+      ['3007394', 'VIE0244556', 'CMA CGM', 'UNICARGO'],
+      ['3007315', '6443358570', 'COSCO', 'UNICARGO'],
+      ['3007321', 'ZIMUMER26803264', 'ZIM', 'BDL'],
+    ],
+  },
+  air: {
+    title: 'Air Shipments',
+    icon: '✈️',
+    rows: [
+      ['AWB', 'Shipment', 'Origin', 'Destination', 'Forwarder'],
+      ['700-5128021300', '2440348', 'Tel Aviv (TLV)', 'Jakarta (CGK)', 'FC'],
+      ['716-0188634', '2440321', 'Tel Aviv (TLV)', 'Cape Town (CPT)', 'FC'],
+      ['114-64228592', '2440328', 'Tel Aviv (TLV)', 'Lima (LIM)', 'Fritz'],
+    ],
+  },
+  forwarders: {
+    title: 'Freight Forwarders',
+    icon: '🤝',
+    rows: [
+      ['Forwarder', 'Shipments', 'Type'],
+      ['GOA', '4', 'Sea'],
+      ['DHL', '1', 'Sea'],
+      ['FRITZ', '2', 'Sea + Air'],
+      ['Rosenthal', '1', 'Sea'],
+      ['UNICARGO', '2', 'Sea'],
+      ['BDL', '1', 'Sea'],
+      ['FC', '2', 'Air'],
+    ],
+  },
+};
+
+function NetworkStatBar() {
+  const [openPopup, setOpenPopup] = React.useState(null);
+  const stats = [
+    { key: 'containers', value: 14, label: 'TOTAL CONTAINERS', icon: '📦' },
+    { key: 'active',     value: 14, label: 'ACTIVE SHIPMENTS', icon: '🚢' },
+    { key: 'inprogress', value: 11, label: 'SHIPPING IN PROGRESS', icon: '🗺️' },
+    { key: 'air',        value: 3,  label: 'AIR SHIPMENTS', icon: '✈️' },
+    { key: 'forwarders', value: 6,  label: 'FREIGHT FORWARDERS', icon: '🤝' },
+  ];
+  const popup = openPopup ? STAT_POPUPS[openPopup] : null;
+  return (
+    <>
+      <div className="network-stat-bar">
+        {stats.map(s => (
+          <div
+            key={s.key}
+            className="network-stat-box"
+            onClick={() => setOpenPopup(openPopup === s.key ? null : s.key)}
+            title="Click for details"
+          >
+            <div className="nsb-icon">{s.icon}</div>
+            <div className="nsb-value">{s.value}</div>
+            <div className="nsb-label">{s.label}</div>
+          </div>
+        ))}
+      </div>
+      {popup && (
+        <div className="nsb-overlay" onClick={() => setOpenPopup(null)}>
+          <div className="nsb-popup" onClick={e => e.stopPropagation()}>
+            <div className="nsb-popup-header">
+              <span>{popup.icon} {popup.title}</span>
+              <button className="nsb-popup-close" onClick={() => setOpenPopup(null)}>×</button>
+            </div>
+            <div className="nsb-popup-body">
+              <table className="nsb-popup-table">
+                <thead>
+                  <tr>{popup.rows[0].map((h, i) => <th key={i}>{h}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {popup.rows.slice(1).map((row, ri) => (
+                    <tr key={ri}>{row.map((cell, ci) => <td key={ci}>{cell}</td>)}</tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ── Container Tracking Result ──────────────────────────────────────────
+function TrackingResultult({ data, docsData, docsLoading, token }) {
   const [previewDoc, setPreviewDoc] = React.useState(null); // { label, blobUrl }
   const [previewLoading, setPreviewLoading] = React.useState(false);
 
@@ -1062,33 +1199,7 @@ export default function ClientPortal() {
 
       {/* ── Network Overview Stat Boxes ── */}
       {activeView === 'portal' && (
-        <div className="network-stat-bar">
-          <div className="network-stat-box">
-            <div className="nsb-icon">📦</div>
-            <div className="nsb-value">14</div>
-            <div className="nsb-label">TOTAL CONTAINERS</div>
-          </div>
-          <div className="network-stat-box highlight">
-            <div className="nsb-icon">🚢</div>
-            <div className="nsb-value">14</div>
-            <div className="nsb-label">ACTIVE SHIPMENTS</div>
-          </div>
-          <div className="network-stat-box">
-            <div className="nsb-icon">🗺️</div>
-            <div className="nsb-value">11</div>
-            <div className="nsb-label">SHIPPING IN PROGRESS</div>
-          </div>
-          <div className="network-stat-box">
-            <div className="nsb-icon">✈️</div>
-            <div className="nsb-value">3</div>
-            <div className="nsb-label">AIR SHIPMENTS</div>
-          </div>
-          <div className="network-stat-box">
-            <div className="nsb-icon">🤝</div>
-            <div className="nsb-value">6</div>
-            <div className="nsb-label">FREIGHT FORWARDERS</div>
-          </div>
-        </div>
+        <NetworkStatBar />
       )}
 
       {activeView === 'portal' && <div className="split-layout">

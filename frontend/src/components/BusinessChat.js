@@ -1,7 +1,6 @@
 /**
  * BusinessChat.js — Netafim Business Chat
- * Layout: top search/selector bar + full-width message thread
- * Business references (container/shipment/MBL/AWB) are highlighted inline.
+ * Layout: phone-style chat window on the left + shipment info panel on the right
  */
 import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
 import axios from 'axios';
@@ -34,6 +33,11 @@ function formatTime(ts) {
 function formatDate(ts) {
   if (!ts) return '';
   return new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+function fmtDateShort(d) {
+  if (!d) return '—';
+  try { return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); }
+  catch { return d; }
 }
 
 // ── Message Bubble ────────────────────────────────────────────────────────────
@@ -99,6 +103,214 @@ function InviteModal({ users, groupMembers, onInvite, onClose }) {
   );
 }
 
+// ── Shipment Info Panel ───────────────────────────────────────────────────────
+function ShipmentInfoPanel({ group, token }) {
+  const [trackData, setTrackData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!group) { setTrackData(null); return; }
+    const container = (group.containers || [])[0];
+    const awb = group.awb;
+    if (!container && !awb) { setTrackData(null); return; }
+    setLoading(true);
+    const url = awb
+      ? `/api/containers/air/track/${encodeURIComponent(awb)}`
+      : `/api/containers/track/${encodeURIComponent(container)}`;
+    axios.get(url, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => setTrackData(r.data))
+      .catch(() => setTrackData(null))
+      .finally(() => setLoading(false));
+  }, [group, token]);
+
+  if (!group) {
+    return (
+      <div className="bc-info-panel bc-info-empty">
+        <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
+        <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--navy)', marginBottom: 6 }}>Shipment Details</div>
+        <div style={{ fontSize: 12, color: 'var(--gray-400)', textAlign: 'center' }}>
+          Select a shipment group to view live tracking details here.
+        </div>
+      </div>
+    );
+  }
+
+  // ── Sea shipment ──────────────────────────────────────────────────────────
+  if (group.type === 'sea' && trackData) {
+    const meta = trackData.data?.metadata || {};
+    const locs = trackData.data?.locations || [];
+    const route = trackData.data?.route || {};
+    const vessels = trackData.data?.vessels || [];
+    const containers = trackData.data?.containers || [];
+    const locById = (id) => locs.find(l => l.id === id);
+    const polLoc = locById(route.pol?.location);
+    const podLoc = locById(route.pod?.location);
+    const vessel = vessels[0];
+    const ctr = containers[0] || {};
+    const status = meta.status || 'UNKNOWN';
+    const statusColor = status === 'DELIVERED' ? '#16a34a' : status === 'IN_TRANSIT' ? '#2563eb' : '#d97706';
+    const events = (ctr.events || []).slice(0, 5);
+
+    return (
+      <div className="bc-info-panel">
+        <div className="bc-info-header">
+          <span>🚢 {group.name}</span>
+          <span className="bc-info-status" style={{ background: statusColor }}>{status.replace(/_/g, ' ')}</span>
+        </div>
+
+        {/* Route */}
+        <div className="bc-info-route">
+          <div className="bc-info-port">
+            <div className="bc-info-port-code">{polLoc?.locode || '—'}</div>
+            <div className="bc-info-port-name">{polLoc?.name || 'Origin'}</div>
+            <div className="bc-info-port-date">{fmtDateShort(route.pol?.date)}</div>
+          </div>
+          <div className="bc-info-route-arrow">
+            <div className="bc-info-route-line" />
+            <div className="bc-info-route-label">{vessel?.name || '—'}</div>
+          </div>
+          <div className="bc-info-port">
+            <div className="bc-info-port-code">{podLoc?.locode || '—'}</div>
+            <div className="bc-info-port-name">{podLoc?.name || 'Destination'}</div>
+            <div className="bc-info-port-date">ETA: {fmtDateShort(route.pod?.date)}</div>
+          </div>
+        </div>
+
+        {/* Meta grid */}
+        <div className="bc-info-meta">
+          <div className="bc-info-meta-item">
+            <div className="bc-info-meta-label">MBL</div>
+            <div className="bc-info-meta-value">{group.mbl || '—'}</div>
+          </div>
+          <div className="bc-info-meta-item">
+            <div className="bc-info-meta-label">Carrier</div>
+            <div className="bc-info-meta-value">{meta.sealine_name || meta.sealine || '—'}</div>
+          </div>
+          <div className="bc-info-meta-item">
+            <div className="bc-info-meta-label">Container</div>
+            <div className="bc-info-meta-value">{(group.containers || []).join(', ') || '—'}</div>
+          </div>
+          <div className="bc-info-meta-item">
+            <div className="bc-info-meta-label">Forwarder</div>
+            <div className="bc-info-meta-value">{group.fwd || '—'}</div>
+          </div>
+          <div className="bc-info-meta-item">
+            <div className="bc-info-meta-label">Container Type</div>
+            <div className="bc-info-meta-value">{ctr.size_type || '—'}</div>
+          </div>
+          <div className="bc-info-meta-item">
+            <div className="bc-info-meta-label">Last Updated</div>
+            <div className="bc-info-meta-value">{fmtDateShort(meta.updated_at)}</div>
+          </div>
+        </div>
+
+        {/* Recent events */}
+        {events.length > 0 && (
+          <div className="bc-info-events">
+            <div className="bc-info-events-title">Recent Events</div>
+            {events.map((ev, i) => (
+              <div key={i} className="bc-info-event-row">
+                <div className="bc-info-event-dot" />
+                <div className="bc-info-event-text">
+                  <span className="bc-info-event-desc">{ev.description || ev.status}</span>
+                  <span className="bc-info-event-date">{fmtDateShort(ev.date)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {loading && <div className="bc-info-loading">Refreshing…</div>}
+      </div>
+    );
+  }
+
+  // ── Air shipment ──────────────────────────────────────────────────────────
+  if (group.type === 'air' && trackData) {
+    const info = trackData.data || {};
+    const meta = trackData.metadata || {};
+    const isFallback = trackData.isFallback;
+    const originCode = info.origin ? (info.origin.match(/\(([^)]+)\)/)?.[1] || 'TLV') : 'TLV';
+    const originName = info.origin ? info.origin.replace(/\s*\([^)]*\)/, '') : 'Tel Aviv';
+    const destCode = info.destination ? (info.destination.match(/\(([^)]+)\)/)?.[1] || info.destination.slice(0,3).toUpperCase()) : '—';
+    const destName = info.destination ? info.destination.replace(/\s*\([^)]*\)/, '') : '—';
+
+    return (
+      <div className="bc-info-panel">
+        <div className="bc-info-header">
+          <span>✈️ {group.name}</span>
+          <span className="bc-info-status" style={{ background: '#2563eb' }}>IN TRANSIT</span>
+        </div>
+
+        <div className="bc-info-route">
+          <div className="bc-info-port">
+            <div className="bc-info-port-code">{originCode}</div>
+            <div className="bc-info-port-name">{originName}</div>
+          </div>
+          <div className="bc-info-route-arrow">
+            <div className="bc-info-route-line" />
+            <div className="bc-info-route-label">✈️ Air Export</div>
+          </div>
+          <div className="bc-info-port">
+            <div className="bc-info-port-code">{destCode}</div>
+            <div className="bc-info-port-name">{destName}</div>
+          </div>
+        </div>
+
+        <div className="bc-info-meta">
+          <div className="bc-info-meta-item">
+            <div className="bc-info-meta-label">AWB</div>
+            <div className="bc-info-meta-value">{info.awb || group.awb || '—'}</div>
+          </div>
+          <div className="bc-info-meta-item">
+            <div className="bc-info-meta-label">Shipment No.</div>
+            <div className="bc-info-meta-value">{info.shipmentNo || '—'}</div>
+          </div>
+          <div className="bc-info-meta-item">
+            <div className="bc-info-meta-label">Forwarder</div>
+            <div className="bc-info-meta-value">{info.forwarder || group.fwd || '—'}</div>
+          </div>
+          <div className="bc-info-meta-item">
+            <div className="bc-info-meta-label">Type</div>
+            <div className="bc-info-meta-value">{info.type || 'Air Export'}</div>
+          </div>
+          {!isFallback && meta.airline?.name && (
+            <div className="bc-info-meta-item">
+              <div className="bc-info-meta-label">Airline</div>
+              <div className="bc-info-meta-value">{meta.airline.name}</div>
+            </div>
+          )}
+          {!isFallback && info.flight_number && (
+            <div className="bc-info-meta-item">
+              <div className="bc-info-meta-label">Flight</div>
+              <div className="bc-info-meta-value">{info.flight_number}</div>
+            </div>
+          )}
+        </div>
+
+        {loading && <div className="bc-info-loading">Refreshing…</div>}
+      </div>
+    );
+  }
+
+  // ── Loading / no data ─────────────────────────────────────────────────────
+  return (
+    <div className="bc-info-panel bc-info-empty">
+      {loading
+        ? <div className="bc-info-loading" style={{ marginTop: 40 }}>Loading shipment data…</div>
+        : (
+          <>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>📦</div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--navy)', marginBottom: 4 }}>{group.name}</div>
+            <div style={{ fontSize: 12, color: 'var(--gray-400)' }}>{group.subtitle}</div>
+            <div style={{ fontSize: 11, color: 'var(--gray-300)', marginTop: 8 }}>Live data unavailable</div>
+          </>
+        )
+      }
+    </div>
+  );
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function BusinessChat() {
   const { token, user } = useContext(AuthContext);
@@ -123,7 +335,6 @@ export default function BusinessChat() {
   const pollRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  // ── Fetch groups ─────────────────────────────────────────────────────────
   const fetchGroups = useCallback(async () => {
     try {
       const res = await axios.get('/api/biz-chat/groups', { headers: authHeaders });
@@ -136,7 +347,6 @@ export default function BusinessChat() {
 
   useEffect(() => { fetchGroups(); }, [fetchGroups]);
 
-  // ── Filter groups ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!searchQ.trim()) { setGroups(allGroups); return; }
     const lq = searchQ.toLowerCase();
@@ -150,7 +360,6 @@ export default function BusinessChat() {
     setShowDropdown(true);
   }, [searchQ, allGroups]);
 
-  // ── Close dropdown on outside click ─────────────────────────────────────
   useEffect(() => {
     const handler = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setShowDropdown(false);
@@ -159,7 +368,6 @@ export default function BusinessChat() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // ── Fetch messages ───────────────────────────────────────────────────────
   const fetchMessages = useCallback(async (groupId) => {
     if (!groupId) return;
     try {
@@ -176,19 +384,16 @@ export default function BusinessChat() {
     return () => clearInterval(pollRef.current);
   }, [activeGroup, fetchMessages]);
 
-  // ── Auto-scroll ──────────────────────────────────────────────────────────
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // ── Load users ───────────────────────────────────────────────────────────
   useEffect(() => {
     axios.get('/api/biz-chat/users', { headers: authHeaders })
       .then(r => setAllUsers(r.data.users || []))
       .catch(() => {});
   }, [token]); // eslint-disable-line
 
-  // ── Select group ─────────────────────────────────────────────────────────
   const selectGroup = (g) => {
     setActiveGroup(g.id);
     setActiveGroupData(g);
@@ -197,7 +402,6 @@ export default function BusinessChat() {
     setShowDropdown(false);
   };
 
-  // ── Send message ─────────────────────────────────────────────────────────
   const sendMessage = async () => {
     if (!inputText.trim() || !activeGroup || sending) return;
     setSending(true);
@@ -214,7 +418,6 @@ export default function BusinessChat() {
     finally { setSending(false); }
   };
 
-  // ── Invite member ────────────────────────────────────────────────────────
   const inviteMember = async (userId) => {
     if (!activeGroup) return;
     try {
@@ -228,139 +431,136 @@ export default function BusinessChat() {
     } catch (e) { console.error('inviteMember', e); }
   };
 
-  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="bc-root">
+      {/* ── SPLIT LAYOUT: phone chat left + info panel right ── */}
+      <div className="bc-split">
 
-      {/* ── TOP BAR ── */}
-      <div className="bc-topbar">
-        <div className="bc-topbar-left">
-          <div className="bc-group-selector" ref={dropdownRef}>
-            <div className="bc-group-selector-input-wrap">
-              <span className="bc-search-icon">🔍</span>
-              <input
-                className="bc-group-selector-input"
-                placeholder={activeGroupData
-                  ? `${activeGroupData.icon} ${activeGroupData.name}`
-                  : 'Search shipment, container, MBL, AWB…'}
-                value={searchQ}
-                onChange={e => { setSearchQ(e.target.value); setShowDropdown(true); }}
-                onFocus={() => setShowDropdown(true)}
-              />
-              {searchQ && (
-                <button className="bc-search-clear" onClick={() => { setSearchQ(''); setShowDropdown(false); }}>✕</button>
+        {/* ── LEFT: Phone-style chat ── */}
+        <div className="bc-phone-wrap">
+          <div className="bc-phone">
+
+            {/* Phone top bar */}
+            <div className="bc-phone-topbar">
+              <div className="bc-group-selector" ref={dropdownRef}>
+                <div className="bc-group-selector-input-wrap">
+                  <span className="bc-search-icon">🔍</span>
+                  <input
+                    className="bc-group-selector-input"
+                    placeholder={activeGroupData
+                      ? `${activeGroupData.icon} ${activeGroupData.name}`
+                      : 'Search shipment, MBL, container…'}
+                    value={searchQ}
+                    onChange={e => { setSearchQ(e.target.value); setShowDropdown(true); }}
+                    onFocus={() => setShowDropdown(true)}
+                  />
+                  {searchQ && (
+                    <button className="bc-search-clear" onClick={() => { setSearchQ(''); setShowDropdown(false); }}>✕</button>
+                  )}
+                </div>
+                {showDropdown && (
+                  <div className="bc-group-dropdown">
+                    {groupsLoading && <div className="bc-dropdown-empty">Loading…</div>}
+                    {!groupsLoading && groups.length === 0 && <div className="bc-dropdown-empty">No groups found</div>}
+                    {groups.map(g => (
+                      <div
+                        key={g.id}
+                        className={`bc-dropdown-item ${activeGroup === g.id ? 'bc-dropdown-item-active' : ''}`}
+                        onClick={() => selectGroup(g)}
+                      >
+                        <span className="bc-dropdown-icon">{g.icon}</span>
+                        <div className="bc-dropdown-info">
+                          <span className="bc-dropdown-name">{g.name}</span>
+                          <span className="bc-dropdown-sub">{g.subtitle}</span>
+                        </div>
+                        {g.lastTs && <span className="bc-dropdown-date">{formatDate(g.lastTs)}</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {activeGroupData && (
+                <button
+                  className="btn-search"
+                  style={{ padding: '4px 10px', fontSize: 11, whiteSpace: 'nowrap', marginTop: 4 }}
+                  onClick={() => setShowInvite(true)}
+                >
+                  👥
+                </button>
               )}
             </div>
 
-            {showDropdown && (
-              <div className="bc-group-dropdown">
-                {groupsLoading && <div className="bc-dropdown-empty">Loading…</div>}
-                {!groupsLoading && groups.length === 0 && <div className="bc-dropdown-empty">No groups found</div>}
-                {groups.map(g => (
-                  <div
-                    key={g.id}
-                    className={`bc-dropdown-item ${activeGroup === g.id ? 'bc-dropdown-item-active' : ''}`}
-                    onClick={() => selectGroup(g)}
-                  >
-                    <span className="bc-dropdown-icon">{g.icon}</span>
-                    <div className="bc-dropdown-info">
-                      <span className="bc-dropdown-name">{g.name}</span>
-                      <span className="bc-dropdown-sub">{g.subtitle}</span>
-                    </div>
-                    {g.lastTs && <span className="bc-dropdown-date">{formatDate(g.lastTs)}</span>}
-                  </div>
+            {/* Group banner */}
+            {activeGroupData && (
+              <div className="bc-group-banner">
+                <span style={{ fontWeight: 700, fontSize: 12, color: 'var(--navy)' }}>
+                  {activeGroupData.icon} {activeGroupData.name}
+                </span>
+                {activeGroupData.mbl && (
+                  <span className="bc-ref-tag" style={{ marginLeft: 6, fontSize: 10 }}>{activeGroupData.mbl}</span>
+                )}
+                {activeGroupData.awb && (
+                  <span className="bc-ref-tag" style={{ marginLeft: 6, fontSize: 10 }}>{activeGroupData.awb}</span>
+                )}
+                {(activeGroupData.containers || []).map(c => (
+                  <span key={c} className="bc-ref-tag" style={{ marginLeft: 4, fontSize: 10 }}>{c}</span>
                 ))}
+              </div>
+            )}
+
+            {/* Messages */}
+            <div className="bc-messages">
+              {!activeGroup && (
+                <div className="bc-empty">
+                  <div style={{ fontSize: 36, marginBottom: 10 }}>💬</div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--navy)', marginBottom: 6 }}>
+                    Select a shipment group
+                  </div>
+                  <div style={{ color: 'var(--gray-500)', fontSize: 12, textAlign: 'center' }}>
+                    Search by shipment number, container ID, MBL, or AWB.
+                  </div>
+                </div>
+              )}
+              {msgsLoading && (
+                <div style={{ padding: 16, textAlign: 'center', color: 'var(--gray-400)', fontSize: 12 }}>Loading…</div>
+              )}
+              {messages.map(msg =>
+                msg.userId === 0
+                  ? <SysMsg key={msg.id} msg={msg} />
+                  : <MsgBubble key={msg.id} msg={msg} isMine={msg.userId === myId} />
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input */}
+            {activeGroup && (
+              <div className="bc-input-row">
+                <input
+                  className="bc-input"
+                  placeholder="Type a message…"
+                  value={inputText}
+                  onChange={e => setInputText(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                  disabled={sending}
+                />
+                <button
+                  className="btn-search bc-send-btn"
+                  onClick={sendMessage}
+                  disabled={sending || !inputText.trim()}
+                >
+                  {sending ? '…' : '➤'}
+                </button>
               </div>
             )}
           </div>
         </div>
 
-        {activeGroupData && (
-          <div className="bc-topbar-right">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              {(activeGroupData.members || []).slice(0, 4).map(uid => {
-                const u = allUsers.find(x => x.id === uid);
-                return u ? (
-                  <div key={uid} className="bc-avatar" title={u.displayName} style={{ width: 28, height: 28, fontSize: 12 }}>{u.avatar}</div>
-                ) : null;
-              })}
-            </div>
-            <button
-              className="btn-search"
-              style={{ padding: '5px 14px', fontSize: 12, whiteSpace: 'nowrap' }}
-              onClick={() => setShowInvite(true)}
-            >
-              👥 Invite
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ── CHAT AREA ── */}
-      {!activeGroup ? (
-        <div className="bc-empty">
-          <div style={{ fontSize: 48, marginBottom: 16 }}>💬</div>
-          <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--navy)', marginBottom: 8 }}>
-            Select a shipment group to start chatting
-          </div>
-          <div style={{ color: 'var(--gray-500)', fontSize: 14, maxWidth: 400, textAlign: 'center' }}>
-            Use the search box above to find a shipment by number, container ID, MBL, or AWB.
-          </div>
+        {/* ── RIGHT: Shipment info panel ── */}
+        <div className="bc-info-wrap">
+          <ShipmentInfoPanel group={activeGroupData} token={token} />
         </div>
-      ) : (
-        <>
-          {/* Group context banner */}
-          <div className="bc-group-banner">
-            <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--navy)' }}>
-              {activeGroupData?.icon} {activeGroupData?.name}
-            </span>
-            <span style={{ fontSize: 12, color: 'var(--gray-500)', marginLeft: 12 }}>
-              {activeGroupData?.subtitle}
-            </span>
-            {activeGroupData?.mbl && (
-              <span className="bc-ref-tag" style={{ marginLeft: 10 }}>{activeGroupData.mbl}</span>
-            )}
-            {activeGroupData?.awb && (
-              <span className="bc-ref-tag" style={{ marginLeft: 10 }}>{activeGroupData.awb}</span>
-            )}
-            {(activeGroupData?.containers || []).map(c => (
-              <span key={c} className="bc-ref-tag" style={{ marginLeft: 4 }}>{c}</span>
-            ))}
-          </div>
 
-          {/* Messages */}
-          <div className="bc-messages">
-            {msgsLoading && (
-              <div style={{ padding: 24, textAlign: 'center', color: 'var(--gray-400)' }}>Loading…</div>
-            )}
-            {messages.map(msg =>
-              msg.userId === 0
-                ? <SysMsg key={msg.id} msg={msg} />
-                : <MsgBubble key={msg.id} msg={msg} isMine={msg.userId === myId} />
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input */}
-          <div className="bc-input-row">
-            <input
-              className="bc-input"
-              placeholder="Type a message… container numbers and shipment refs will be highlighted"
-              value={inputText}
-              onChange={e => setInputText(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-              disabled={sending}
-            />
-            <button
-              className="btn-search bc-send-btn"
-              onClick={sendMessage}
-              disabled={sending || !inputText.trim()}
-            >
-              {sending ? '…' : '➤ Send'}
-            </button>
-          </div>
-        </>
-      )}
+      </div>
 
       {showInvite && activeGroupData && (
         <InviteModal

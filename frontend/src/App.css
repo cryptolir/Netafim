@@ -293,7 +293,7 @@ body {
   gap: 0;
   background: var(--white);
   border-bottom: 1px solid var(--gray-200);
-  padding: 0 24px;
+  padding: 0 16px;
   flex-shrink: 0;
 }
 
@@ -303,11 +303,10 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 18px 12px 14px;
-  border-top: 3px solid transparent;
+  padding: 10px 12px 8px;
+  border-top: 2px solid var(--gray-200);
   border-right: 1px solid var(--gray-200);
-  background: var(--gray-50);
-  transition: background 0.15s;
+  background: var(--white);
 }
 
 .network-stat-box:last-child {
@@ -319,22 +318,18 @@ body {
   border-top-color: var(--ocean);
 }
 
-.network-stat-box:not(.highlight) {
-  border-top-color: var(--navy);
-}
-
 .nsb-icon {
-  font-size: 26px;
-  margin-bottom: 6px;
+  font-size: 20px;
+  margin-bottom: 4px;
   line-height: 1;
 }
 
 .nsb-value {
-  font-size: 36px;
+  font-size: 26px;
   font-weight: 800;
   color: var(--navy);
   line-height: 1;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   font-family: 'Inter', sans-serif;
 }
 
@@ -343,10 +338,10 @@ body {
 }
 
 .nsb-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--gray-500);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   text-align: center;
 }
@@ -357,7 +352,7 @@ body {
 .split-layout {
   flex: 1;
   display: flex;
-  height: calc(100vh - 156px);
+  height: calc(100vh - 120px);
   overflow: hidden;
 }
 

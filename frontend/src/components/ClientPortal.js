@@ -193,7 +193,7 @@ function NetworkStatBar() {
 }
 
 // ── Container Tracking Result ──────────────────────────────────────────
-function TrackingResultult({ data, docsData, docsLoading, token }) {
+function TrackingResult({ data, docsData, docsLoading, token }) {
   const [previewDoc, setPreviewDoc] = React.useState(null); // { label, blobUrl }
   const [previewLoading, setPreviewLoading] = React.useState(false);
 

@@ -60,7 +60,7 @@ export default function Dashboard() {
         </div>
         <div className="nav-spacer" />
         <div className="nav-user">
-          <span>Admin Dashboard</span>
+          <span>Client Portal</span>
           <button className="btn-logout" onClick={logout}>Sign Out</button>
           <div style={{ display: 'flex', gap: 4 }}>
             <button

@@ -1176,7 +1176,7 @@ export default function ClientPortal() {
         </div>
         <div className="nav-spacer" />
         <div className="nav-user">
-          <span>Client Portal</span>
+          <span>Admin Portal</span>
           <button className="btn-logout" onClick={logout}>Sign Out</button>
           <div style={{ display: 'flex', gap: 4 }}>
             <button

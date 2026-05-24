@@ -835,8 +835,8 @@ function ShipmentDetailsForm({ sapData }) {
       <div className="section-header">
         <div className="section-icon">📋</div>
         <div>
-          <div className="section-title">Shipment Details</div>
-          <div className="section-subtitle">Business data linked to this shipment (sourced from SAP)</div>
+          <div className="section-title">Reports</div>
+          <div className="section-subtitle">Generate reports based on shipment data (sourced from SAP)</div>
         </div>
       </div>
       <div className="section-body">

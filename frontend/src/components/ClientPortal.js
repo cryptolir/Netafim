@@ -771,30 +771,56 @@ function AirSchedulesResult({ data }) {
 }
 
 // ── Shipment Details Form ──────────────────────────────────────────────────
+const COUNTRIES = [
+  'Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia','Austria',
+  'Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan',
+  'Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi','Cabo Verde','Cambodia',
+  'Cameroon','Canada','Central African Republic','Chad','Chile','China','Colombia','Comoros','Congo (DRC)','Congo (Republic)',
+  'Costa Rica','Croatia','Cuba','Cyprus','Czech Republic','Denmark','Djibouti','Dominica','Dominican Republic','Ecuador',
+  'Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia','Fiji','Finland','France',
+  'Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau',
+  'Guyana','Haiti','Honduras','Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland',
+  'Israel','Italy','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati','Kuwait','Kyrgyzstan',
+  'Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania','Luxembourg','Madagascar',
+  'Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico','Micronesia',
+  'Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique','Myanmar','Namibia','Nauru','Nepal',
+  'Netherlands','New Zealand','Nicaragua','Niger','Nigeria','North Korea','North Macedonia','Norway','Oman','Pakistan',
+  'Palau','Palestine','Panama','Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal','Qatar',
+  'Romania','Russia','Rwanda','Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines','Samoa','San Marino','Sao Tome and Principe','Saudi Arabia',
+  'Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands','Somalia','South Africa',
+  'South Korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria','Taiwan',
+  'Tajikistan','Tanzania','Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago','Tunisia','Turkey','Turkmenistan',
+  'Tuvalu','Uganda','Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay','Uzbekistan','Vanuatu','Vatican City',
+  'Venezuela','Vietnam','Yemen','Zambia','Zimbabwe'
+];
+
 function ShipmentDetailsForm({ sapData }) {
   const [formData, setFormData] = useState({
-    businessUnit: sapData?.businessUnit || 'N/A',
-    consignee: sapData?.consignee || 'N/A',
-    country: sapData?.country || 'N/A',
-    project: sapData?.project || 'N/A',
-    plannedShippingCost: sapData?.plannedShippingCost || '',
+    businessUnit: '',
+    consignee: '',
+    country: '',
+    project: '',
     actualShippingCost: sapData?.actualShippingCost || '',
+    reportType: '',
   });
-  const [saved, setSaved] = useState(false);
+  const [generated, setGenerated] = useState(false);
+
+  // SAP-sourced read-only values
+  const plannedShippingCost = sapData?.plannedShippingCost || 'N/A';
+  const annualShippingCost = sapData?.annualShippingCost || 'N/A';
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    setSaved(false);
+    setGenerated(false);
   };
 
-  const handleSave = () => {
-    // In a real integration this would POST to /api/shipment-details
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleGenerate = () => {
+    setGenerated(true);
+    setTimeout(() => setGenerated(false), 3000);
   };
 
   const costDiff = () => {
-    const planned = parseFloat(formData.plannedShippingCost);
+    const planned = parseFloat(plannedShippingCost);
     const actual = parseFloat(formData.actualShippingCost);
     if (isNaN(planned) || isNaN(actual)) return null;
     const diff = actual - planned;
@@ -815,75 +841,88 @@ function ShipmentDetailsForm({ sapData }) {
       </div>
       <div className="section-body">
         <div className="shipment-form-grid">
-          {/* Row 1 */}
+          {/* Row 1 — Business Unit & Consignee */}
           <div className="form-field">
             <label className="form-label">
               <span className="form-label-icon">🏢</span> Business Unit
             </label>
-            <input
-              type="text"
+            <select
               className="form-input sap-field"
               value={formData.businessUnit}
               onChange={e => handleChange('businessUnit', e.target.value)}
-              placeholder="e.g. Netafim EMEA"
-            />
+            >
+              <option value="">— Select —</option>
+              <option value="Business Unit 1">Business Unit 1</option>
+              <option value="Business Unit 2">Business Unit 2</option>
+              <option value="Business Unit 3">Business Unit 3</option>
+              <option value="Business Unit 4">Business Unit 4</option>
+            </select>
           </div>
           <div className="form-field">
             <label className="form-label">
               <span className="form-label-icon">👤</span> Consignee
             </label>
-            <input
-              type="text"
+            <select
               className="form-input sap-field"
               value={formData.consignee}
               onChange={e => handleChange('consignee', e.target.value)}
-              placeholder="e.g. Distributor Name"
-            />
+            >
+              <option value="">— Select —</option>
+              <option value="Consignee 1">Consignee 1</option>
+              <option value="Consignee 2">Consignee 2</option>
+              <option value="Consignee 3">Consignee 3</option>
+              <option value="Consignee 4">Consignee 4</option>
+            </select>
           </div>
-          {/* Row 2 */}
+          {/* Row 2 — Country & Project */}
           <div className="form-field">
             <label className="form-label">
               <span className="form-label-icon">🌍</span> Country
             </label>
-            <input
-              type="text"
+            <select
               className="form-input sap-field"
               value={formData.country}
               onChange={e => handleChange('country', e.target.value)}
-              placeholder="e.g. France"
-            />
+            >
+              <option value="">— Select Country —</option>
+              {COUNTRIES.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </div>
           <div className="form-field">
             <label className="form-label">
-              <span className="form-label-icon">📁</span> Project
+              <span className="form-label-icon">📁</span> Project Name
             </label>
             <input
               type="text"
-              className="form-input sap-field"
+              className="form-input"
               value={formData.project}
               onChange={e => handleChange('project', e.target.value)}
-              placeholder="e.g. Project Alpha"
+              placeholder="Enter project name"
             />
           </div>
-          {/* Row 3 — Cost fields */}
-          <div className="form-field">
+        </div>
+
+        {/* Cost row — Planned (SAP) + Actual on same line */}
+        <div className="cost-row-inline">
+          <div className="form-field cost-field-inline">
             <label className="form-label">
               <span className="form-label-icon">💰</span> Planned Shipping Cost
+              <span className="sap-tag">Retrieved from SAP</span>
             </label>
             <div className="cost-input-wrap">
               <span className="cost-currency">$</span>
               <input
-                type="number"
-                className="form-input cost-input"
-                value={formData.plannedShippingCost}
-                onChange={e => handleChange('plannedShippingCost', e.target.value)}
-                placeholder="0.00"
-                min="0"
-                step="0.01"
+                type="text"
+                className="form-input cost-input sap-readonly"
+                value={plannedShippingCost}
+                readOnly
+                placeholder="N/A"
               />
             </div>
           </div>
-          <div className="form-field">
+          <div className="form-field cost-field-inline">
             <label className="form-label">
               <span className="form-label-icon">💵</span> Actual Shipping Cost
             </label>
@@ -902,6 +941,24 @@ function ShipmentDetailsForm({ sapData }) {
           </div>
         </div>
 
+        {/* Annual Shipping Cost — SAP read-only, full width */}
+        <div className="form-field" style={{ marginTop: 12 }}>
+          <label className="form-label">
+            <span className="form-label-icon">📅</span> Annual Shipping Cost
+            <span className="sap-tag">Retrieved from SAP</span>
+          </label>
+          <div className="cost-input-wrap">
+            <span className="cost-currency">$</span>
+            <input
+              type="text"
+              className="form-input cost-input sap-readonly"
+              value={annualShippingCost}
+              readOnly
+              placeholder="N/A"
+            />
+          </div>
+        </div>
+
         {/* Cost variance indicator */}
         {diff !== null && (
           <div className={`cost-variance ${diff.over ? 'over-budget' : 'under-budget'}`}>
@@ -914,6 +971,24 @@ function ShipmentDetailsForm({ sapData }) {
           </div>
         )}
 
+        {/* Report Type dropdown */}
+        <div className="form-field" style={{ marginTop: 16 }}>
+          <label className="form-label">
+            <span className="form-label-icon">📊</span> Report Type
+          </label>
+          <select
+            className="form-input"
+            value={formData.reportType}
+            onChange={e => handleChange('reportType', e.target.value)}
+          >
+            <option value="">— Select Report Type —</option>
+            <option value="demurrage">Demurrage Report</option>
+            <option value="late_shipments">Late Shipments</option>
+            <option value="per_carrier">Shipments per Carrier</option>
+            <option value="per_forwarder">Shipments per Forwarder</option>
+          </select>
+        </div>
+
         {/* SAP source note */}
         <div className="sap-source-note">
           <span className="sap-badge">SAP</span>
@@ -924,10 +999,10 @@ function ShipmentDetailsForm({ sapData }) {
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
           <button
             className="btn-search"
-            onClick={handleSave}
-            style={{ minWidth: 120 }}
+            onClick={handleGenerate}
+            style={{ minWidth: 150 }}
           >
-            {saved ? '✅ Saved' : '💾 Save Details'}
+            {generated ? '✅ Report Generated' : '📊 Generate Report'}
           </button>
         </div>
       </div>

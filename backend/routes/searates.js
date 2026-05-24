@@ -42,8 +42,34 @@ router.get('/track/:number', authenticateToken, async (req, res) => {
 router.get('/air/track/:awb', authenticateToken, async (req, res) => {
   const { awb } = req.params;
 
+  // IATA airport coordinate lookup for known Netafim destinations
+  const AIRPORT_COORDS = {
+    'TLV': { iata_code: 'TLV', name: 'Ben Gurion International Airport', country: 'Israel', lat: 32.0114, lng: 34.8867 },
+    'CGK': { iata_code: 'CGK', name: 'Soekarno-Hatta International Airport', country: 'Indonesia', lat: -6.1256, lng: 106.6559 },
+    'CPT': { iata_code: 'CPT', name: 'Cape Town International Airport', country: 'South Africa', lat: -33.9648, lng: 18.6017 },
+    'LIM': { iata_code: 'LIM', name: 'Jorge Chávez International Airport', country: 'Peru', lat: -12.0219, lng: -77.1143 },
+    'JNB': { iata_code: 'JNB', name: 'O.R. Tambo International Airport', country: 'South Africa', lat: -26.1367, lng: 28.2411 },
+    'NBO': { iata_code: 'NBO', name: 'Jomo Kenyatta International Airport', country: 'Kenya', lat: -1.3192, lng: 36.9275 },
+    'BOM': { iata_code: 'BOM', name: 'Chhatrapati Shivaji Maharaj International Airport', country: 'India', lat: 19.0896, lng: 72.8656 },
+    'DEL': { iata_code: 'DEL', name: 'Indira Gandhi International Airport', country: 'India', lat: 28.5562, lng: 77.1000 },
+    'SYD': { iata_code: 'SYD', name: 'Sydney Kingsford Smith Airport', country: 'Australia', lat: -33.9399, lng: 151.1753 },
+    'MEX': { iata_code: 'MEX', name: 'Benito Juárez International Airport', country: 'Mexico', lat: 19.4363, lng: -99.0721 },
+  };
+
+  // Extract IATA code from strings like "Tel Aviv (TLV)" or just "TLV"
+  const extractIATA = (str) => {
+    if (!str) return null;
+    const m = str.match(/\(([A-Z]{3})\)/);
+    return m ? m[1] : (str.length === 3 ? str.toUpperCase() : null);
+  };
+
   // Helper: build a structured fallback response from MIND data
-  const buildFallback = (s) => ({
+  const buildFallback = (s) => {
+    const originCode = extractIATA(s.origin || 'Tel Aviv (TLV)');
+    const destCode = extractIATA(s.destination);
+    const fromAirport = originCode ? (AIRPORT_COORDS[originCode] || { iata_code: originCode, name: s.origin, country: '', lat: null, lng: null }) : null;
+    const toAirport = destCode ? (AIRPORT_COORDS[destCode] || { iata_code: destCode, name: s.destination, country: '', lat: null, lng: null }) : null;
+    return ({
     success: true,
     status_code: 'FALLBACK',
     isFallback: true,
@@ -60,12 +86,13 @@ router.get('/air/track/:awb', authenticateToken, async (req, res) => {
       forwarder: s.forwarder,
       origin: s.origin || 'Tel Aviv (TLV)',
       destination: s.destination,
-      from: null,
-      to: { name: s.destination },
+      from: fromAirport,
+      to: toAirport,
       routes: [],
       events: [],
     },
   });
+  };
 
   try {
     const data = await trackAirShipment(awb);

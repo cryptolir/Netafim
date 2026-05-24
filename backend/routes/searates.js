@@ -54,6 +54,10 @@ router.get('/air/track/:awb', authenticateToken, async (req, res) => {
     'DEL': { iata_code: 'DEL', name: 'Indira Gandhi International Airport', country: 'India', lat: 28.5562, lng: 77.1000 },
     'SYD': { iata_code: 'SYD', name: 'Sydney Kingsford Smith Airport', country: 'Australia', lat: -33.9399, lng: 151.1753 },
     'MEX': { iata_code: 'MEX', name: 'Benito Juárez International Airport', country: 'Mexico', lat: 19.4363, lng: -99.0721 },
+    'SCL': { iata_code: 'SCL', name: 'Arturo Merino Benítez International Airport', country: 'Chile', lat: -33.3930, lng: -70.7858 },
+    'MEL': { iata_code: 'MEL', name: 'Melbourne Airport', country: 'Australia', lat: -37.6690, lng: 144.8410 },
+    'SAP': { iata_code: 'SAP', name: 'Ramón Villeda Morales International Airport', country: 'Honduras', lat: 15.4526, lng: -87.9236 },
+    'BCN': { iata_code: 'BCN', name: 'Barcelona–El Prat Airport', country: 'Spain', lat: 41.2974, lng: 2.0833 },
   };
 
   // Extract IATA code from strings like "Tel Aviv (TLV)" or just "TLV"

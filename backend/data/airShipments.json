@@ -22,5 +22,37 @@
     "forwarder": "Fritz",
     "origin": "Tel Aviv (TLV)",
     "destination": "Lima (LIM)"
+  },
+  {
+    "awb": "057-58874082",
+    "shipmentNo": "3007506",
+    "type": "Air 3RD",
+    "forwarder": "DIVYA",
+    "origin": "Delhi (DEL)",
+    "destination": "Santiago (SCL)"
+  },
+  {
+    "awb": "618-53281141",
+    "shipmentNo": "3007508",
+    "type": "Air 3RD",
+    "forwarder": "DIVYA",
+    "origin": "Delhi (DEL)",
+    "destination": "Melbourne (MEL)"
+  },
+  {
+    "awb": "729-94581793",
+    "shipmentNo": "3007511",
+    "type": "Air 3RD",
+    "forwarder": "DIVYA",
+    "origin": "Delhi (DEL)",
+    "destination": "San Pedro Sula (SAP)"
+  },
+  {
+    "awb": "074-05164585",
+    "shipmentNo": "3007532",
+    "type": "Air 3RD",
+    "forwarder": "Unicargo",
+    "origin": "Barcelona (BCN)",
+    "destination": "Cape Town (CPT)"
   }
 ]

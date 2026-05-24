@@ -1,6 +1,6 @@
 [
   {
-    "awb": "700-5128021300",
+    "awb": "70051280213",
     "shipmentNo": "2440348",
     "type": "Air Export",
     "forwarder": "FC",
@@ -8,7 +8,7 @@
     "destination": "Jakarta (CGK)"
   },
   {
-    "awb": "716-0188634",
+    "awb": "71601886340",
     "shipmentNo": "2440321",
     "type": "Air Export",
     "forwarder": "FC",
@@ -16,7 +16,7 @@
     "destination": "Cape Town (CPT)"
   },
   {
-    "awb": "114-64228592",
+    "awb": "11464228592",
     "shipmentNo": "2440328",
     "type": "Air Export",
     "forwarder": "Fritz",

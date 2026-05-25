@@ -99,8 +99,8 @@ const STAT_POPUPS = {
     ],
   },
   inprogress: {
-    title: 'Shipping In Progress',
-    icon: '🗺️',
+    title: 'Late Arrivals',
+    icon: '⚠️',
     rows: [
       ['Shipment', 'MBL', 'Carrier', 'Forwarder'],
       ['3007283', 'ZIMUMER25802993', 'ZIM', 'BDL'],
@@ -147,7 +147,7 @@ function NetworkStatBar() {
   const stats = [
     { key: 'containers', value: 14, label: 'TOTAL CONTAINERS', icon: '📦' },
     { key: 'active',     value: 14, label: 'ACTIVE SHIPMENTS', icon: '🚢' },
-    { key: 'inprogress', value: 11, label: 'SHIPPING IN PROGRESS', icon: '🗺️' },
+    { key: 'inprogress', value: 11, label: 'LATE ARRIVALS', icon: '⚠️' },
     { key: 'air',        value: 3,  label: 'AIR SHIPMENTS', icon: '✈️' },
     { key: 'forwarders', value: 6,  label: 'FREIGHT FORWARDERS', icon: '🤝' },
   ];

@@ -77,8 +77,27 @@ router.get('/track/:number', authenticateToken, async (req, res) => {
     console.error('Tracking API error:', err.response?.data || err.message);
   }
 
-  // 3. If API returned valid data, enrich with local info and return
-  if (apiData && apiData.data) {
+  // SCAC to carrier name mapping
+  const SCAC_CARRIERS = {
+    'ZIMU': 'ZIM Integrated Shipping',
+    'MEDU': 'Mediterranean Shipping Company (MSC)',
+    'MSCU': 'Mediterranean Shipping Company (MSC)',
+    'MAEU': 'Maersk Line',
+    'COSU': 'COSCO Shipping',
+    'CMDU': 'CMA CGM',
+    'ONEY': 'Ocean Network Express (ONE)',
+    'ESPU': 'Evergreen Marine (ESL)',
+    'HDMU': 'Hapag-Lloyd',
+    'HLCU': 'Hapag-Lloyd',
+  };
+
+  // 3. If API returned valid data (not an error response), enrich with local info and return
+  const apiHasRealData = apiData && apiData.data && 
+    !apiData.data.error && 
+    apiData.status !== 'error' &&
+    !['API_KEY_LIMIT_REACHED', 'API_KEY_WRONG', 'API_KEY_ACCESS_DENIED', 'WRONG_NUMBER'].includes(apiData.message || apiData.status_code);
+
+  if (apiHasRealData) {
     if (localMatch) {
       apiData.localShipment = localMatch;
       apiData.hasLocalDocs = true;
@@ -86,8 +105,17 @@ router.get('/track/:number', authenticateToken, async (req, res) => {
     return res.json(apiData);
   }
 
-  // 4. If API failed but we have local data, return a structured fallback
+  // 4. If API failed/unavailable but we have local data, return a rich structured fallback
   if (localMatch) {
+    const carrierName = SCAC_CARRIERS[localMatch.scac] || localMatch.scac;
+    const containers = (localMatch.containers || []).map((c, i) => ({
+      number: c,
+      iso_code: '45G1',
+      size_type: "40' HC DRY",
+      status: 'IN_TRANSIT',
+      events: [],
+    }));
+
     return res.json({
       success: true,
       status_code: 'LOCAL_DATA',
@@ -97,25 +125,25 @@ router.get('/track/:number', authenticateToken, async (req, res) => {
       data: {
         metadata: {
           number: query,
-          type: 'CT',
+          type: localMatch.containers.some(c => c.toUpperCase() === query) ? 'CT' : 'BL',
           sealine: localMatch.scac,
-          sealine_name: localMatch.scac,
+          sealine_name: carrierName,
+          carrier_name: carrierName,
+          carrier_scac: localMatch.scac,
           status: 'IN_TRANSIT',
           updated_at: new Date().toISOString(),
         },
         route: {
-          pol: { location: 'origin' },
-          pod: { location: 'destination' },
+          pol: { location: 'pol_1', date: null },
+          pod: { location: 'pod_1', date: null },
         },
-        locations: [],
-        containers: [{
-          number: localMatch.containers[0] || query,
-          iso_code: '',
-          size_type: '40\' HC DRY',
-          status: 'IN_TRANSIT',
-          events: [],
-        }],
+        locations: [
+          { id: 'pol_1', name: 'Ashdod', country: 'Israel', locode: 'ILASH', lat: 31.8167, lng: 34.6333 },
+          { id: 'pod_1', name: 'Destination Port', country: '', locode: '', lat: null, lng: null },
+        ],
+        containers: containers,
         vessels: [],
+        facilities: [],
         shipmentNo: localMatch.shipmentNo,
         mbl: localMatch.mbl,
         forwarder: localMatch.forwarder,
@@ -128,6 +156,10 @@ router.get('/track/:number', authenticateToken, async (req, res) => {
   // 5. No local data and API failed — return error
   if (apiError) {
     return res.status(500).json({ error: 'Failed to fetch container tracking information', details: apiError.message });
+  }
+  // API returned an error object (like API_KEY_LIMIT_REACHED) with no local match
+  if (apiData && (apiData.status === 'error' || apiData.message === 'API_KEY_LIMIT_REACHED')) {
+    return res.status(503).json({ error: 'Tracking API unavailable (key limit reached). No local data found for this number.', details: apiData.message });
   }
   return res.json(apiData);
 });

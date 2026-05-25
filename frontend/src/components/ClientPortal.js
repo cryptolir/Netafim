@@ -317,10 +317,16 @@ function TrackingResult({ data, docsData, docsLoading, token }) {
       )}
 
       <div className="tracking-meta">
-        {metadata.sealine_name && (
+        {(metadata.sealine_name || metadata.carrier_name) && (
           <div className="meta-item">
             <div className="meta-label">Shipping Line</div>
-            <div className="meta-value">{metadata.sealine_name}</div>
+            <div className="meta-value">{metadata.carrier_name || metadata.sealine_name}</div>
+          </div>
+        )}
+        {metadata.carrier_scac && (
+          <div className="meta-item">
+            <div className="meta-label">SCAC Code</div>
+            <div className="meta-value">{metadata.carrier_scac}</div>
           </div>
         )}
         {mainVessel.name && (
@@ -335,6 +341,12 @@ function TrackingResult({ data, docsData, docsLoading, token }) {
             <div className="meta-value">{container.size_type}</div>
           </div>
         )}
+        {containers.length > 1 && (
+          <div className="meta-item">
+            <div className="meta-label">Total Containers</div>
+            <div className="meta-value">{containers.length}</div>
+          </div>
+        )}
         {metadata.updated_at && (
           <div className="meta-item">
             <div className="meta-label">Last Updated</div>
@@ -345,9 +357,22 @@ function TrackingResult({ data, docsData, docsLoading, token }) {
       </div>
 
       {/* Events + Documents side-by-side */}
-      {(events.length > 0 || docsLoading || hasDocs) && (
+      {(events.length > 0 || docsLoading || hasDocs || localShipment) && (
         <div className="events-docs-row">
-          {/* Left: Shipment Events */}
+          {/* Left: Shipment Events or Container List */}
+          {events.length === 0 && localShipment && localShipment.containers.length > 0 && (
+            <div className="events-col">
+              <div className="events-col-title">Containers ({localShipment.containers.length})</div>
+              <div className="timeline">
+                {localShipment.containers.map((c, i) => (
+                  <div key={i} className="timeline-event actual">
+                    <div className="event-desc" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{c}</div>
+                    <div className="event-location">Container {i + 1} of {localShipment.containers.length}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {events.length > 0 && (
             <div className="events-col">
               <div className="events-col-title">Shipment Events</div>

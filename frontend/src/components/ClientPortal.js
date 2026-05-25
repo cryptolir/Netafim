@@ -279,21 +279,7 @@ function TrackingResult({ data, docsData, docsLoading, token }) {
         <span className={`status-badge ${getStatusClass(status)}`}>{status.replace(/_/g, ' ')}</span>
       </div>
 
-      {/* Local Shipment Data Banner */}
-      {localShipment && (
-        <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: '10px 14px', margin: '8px 0', fontSize: 12 }}>
-          <div style={{ fontWeight: 700, color: '#0369a1', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span>📋</span> MIND Shipment Data {isLocalFallback && <span style={{ background: '#fef3c7', color: '#92400e', padding: '2px 6px', borderRadius: 4, fontSize: 10, fontWeight: 600 }}>LOCAL</span>}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '4px 16px', color: '#334155' }}>
-            <div><strong>Shipment:</strong> {localShipment.shipmentNo}</div>
-            <div><strong>MBL:</strong> {localShipment.mbl}</div>
-            <div><strong>Forwarder:</strong> {localShipment.forwarder}</div>
-            <div><strong>SCAC:</strong> {localShipment.scac}</div>
-            <div style={{ gridColumn: '1 / -1' }}><strong>Containers:</strong> {localShipment.containers.join(', ')}</div>
-          </div>
-        </div>
-      )}
+
 
       {(polLoc.name || podLoc.name) && (
         <div className="route-visual">

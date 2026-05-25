@@ -62,17 +62,18 @@ const STAT_POPUPS = {
     icon: '📦',
     rows: [
       ['Shipment', 'MBL', 'Forwarder', 'Containers'],
-      ['3007308', 'MEDUXK675106', 'GOA', 'MSNU8656572'],
-      ['3007373', 'HLCUIZ1260201827', 'GOA', 'HLBU1333628'],
-      ['2034143', 'EBKG16025165', 'GOA', 'FFAU5533113'],
-      ['3007337', '265858161', 'GOA', 'TCKU7806690'],
-      ['4011660', 'VIEA40642', 'DHL', 'MSBU4228120'],
-      ['4011676', 'ZIMUIAH985650', 'FRITZ', 'JZPU8021158, JXLU6468215, ZCSU6927417, GAOU7588197'],
-      ['2034114', 'MEDUKM055225', 'Rosenthal', 'TXGU5057347'],
-      ['2034110', '721336190', 'FRITZ', 'GCXU5788346'],
-      ['3007394', 'VIE0244556', 'UNICARGO', 'APHU7018733'],
+      ['3007283', 'ZIMUMER25802993', 'BDL', 'ZCSU7221847'],
+      ['3007304', 'MEDUXK674836', 'BDL', 'BMOU6008700'],
+      ['3007344', 'MEDUXK687986', 'BDL', 'CAIU7795981'],
+      ['2033991', 'MEDUKM036373', 'Rosenthal', 'TRHU7345364, MSCU5426470'],
+      ['2034060', 'MEDUKM045440', 'Rosenthal', 'MEDU8765745'],
+      ['2034062', 'MEDUKM045788', 'Rosenthal', 'MSNU5191379'],
+      ['3007325', '265573092', 'UNICARGO', 'TRLU7537616, MRKU2456776, MIEU2031241, MRKU2810811'],
+      ['3007333', '265555402', 'UNICARGO', 'MRSU7660635, MSKU1569471, MSKU0761303, MRSU5717201'],
       ['3007315', '6443358570', 'UNICARGO', 'CSLU2384211'],
-      ['3007321', 'ZIMUMER26803264', 'BDL', 'ZCSU6524670'],
+      ['3007302', '263497067', 'UNICARGO', '20 containers'],
+      ['3007313', 'ONEYHAMG01212900', 'GOA', 'FFAU1436408'],
+      ['2034010', '265804079', 'GOA', 'TEMU8855116'],
     ],
   },
   active: {
@@ -80,20 +81,21 @@ const STAT_POPUPS = {
     icon: '🚢',
     rows: [
       ['Shipment', 'Type', 'Forwarder', 'Reference'],
-      ['3007308', 'Sea', 'GOA', 'MEDUXK675106'],
-      ['3007373', 'Sea', 'GOA', 'HLCUIZ1260201827'],
-      ['2034143', 'Sea', 'GOA', 'EBKG16025165'],
-      ['3007337', 'Sea', 'GOA', '265858161'],
-      ['4011660', 'Sea', 'DHL', 'VIEA40642'],
-      ['4011676', 'Sea', 'FRITZ', 'ZIMUIAH985650'],
-      ['2034114', 'Sea', 'Rosenthal', 'MEDUKM055225'],
-      ['2034110', 'Sea', 'FRITZ', '721336190'],
-      ['3007394', 'Sea', 'UNICARGO', 'VIE0244556'],
-      ['3007315', 'Sea', 'UNICARGO', '6443358570'],
-      ['3007321', 'Sea', 'BDL', 'ZIMUMER26803264'],
-      ['2440348', 'Air', 'FC', 'AWB 700-5128021300'],
-      ['2440321', 'Air', 'FC', 'AWB 716-0188634'],
-      ['2440328', 'Air', 'Fritz', 'AWB 114-64228592'],
+      ['3007283', 'Sea', 'BDL', 'ZIMUMER25802993'],
+      ['3007304', 'Sea', 'BDL', 'MEDUXK674836'],
+      ['3007344', 'Sea', 'BDL', 'MEDUXK687986'],
+      ['2033991', 'Sea', 'Rosenthal', 'MEDUKM036373'],
+      ['2034060', 'Sea', 'Rosenthal', 'MEDUKM045440'],
+      ['3007325', 'Sea', 'UNICARGO', '265573092'],
+      ['3007333', 'Sea', 'UNICARGO', '265555402'],
+      ['3007302', 'Sea', 'UNICARGO', '263497067'],
+      ['3007335', 'Sea', 'UNICARGO', 'ANT1975091'],
+      ['2033947', 'Sea', 'GOA', '264232297'],
+      ['3007313', 'Sea', 'GOA', 'ONEYHAMG01212900'],
+      ['3007294', 'Sea', 'GOA', 'ESLTURCDI0002100'],
+      ['3007506', 'Air', 'DIVYA', 'AWB 057-58874082'],
+      ['3007508', 'Air', 'DIVYA', 'AWB 618-53281141'],
+      ['3007532', 'Air', 'Unicargo', 'AWB 074-05164585'],
     ],
   },
   inprogress: {
@@ -101,17 +103,17 @@ const STAT_POPUPS = {
     icon: '🗺️',
     rows: [
       ['Shipment', 'MBL', 'Carrier', 'Forwarder'],
-      ['3007308', 'MEDUXK675106', 'MSC', 'GOA'],
-      ['3007373', 'HLCUIZ1260201827', 'Hapag-Lloyd', 'GOA'],
-      ['2034143', 'EBKG16025165', 'MSC', 'GOA'],
-      ['3007337', '265858161', 'Maersk', 'GOA'],
-      ['4011660', 'VIEA40642', 'MSC', 'DHL'],
-      ['4011676', 'ZIMUIAH985650', 'ZIM', 'FRITZ'],
-      ['2034114', 'MEDUKM055225', 'MSC', 'Rosenthal'],
-      ['2034110', '721336190', 'Maersk', 'FRITZ'],
-      ['3007394', 'VIE0244556', 'CMA CGM', 'UNICARGO'],
+      ['3007283', 'ZIMUMER25802993', 'ZIM', 'BDL'],
+      ['3007304', 'MEDUXK674836', 'MSC', 'BDL'],
+      ['3007344', 'MEDUXK687986', 'MSC', 'BDL'],
+      ['2033991', 'MEDUKM036373', 'MSC', 'Rosenthal'],
+      ['3007325', '265573092', 'Maersk', 'UNICARGO'],
+      ['3007333', '265555402', 'Maersk', 'UNICARGO'],
       ['3007315', '6443358570', 'COSCO', 'UNICARGO'],
-      ['3007321', 'ZIMUMER26803264', 'ZIM', 'BDL'],
+      ['3007302', '263497067', 'Maersk', 'UNICARGO'],
+      ['3007319', 'MERG00219900', 'ONE', 'UNICARGO'],
+      ['2033947', '264232297', 'Maersk', 'GOA'],
+      ['3007313', 'ONEYHAMG01212900', 'ONE', 'GOA'],
     ],
   },
   air: {
@@ -119,9 +121,10 @@ const STAT_POPUPS = {
     icon: '✈️',
     rows: [
       ['AWB', 'Shipment', 'Origin', 'Destination', 'Forwarder'],
-      ['700-5128021300', '2440348', 'Tel Aviv (TLV)', 'Jakarta (CGK)', 'FC'],
-      ['716-0188634', '2440321', 'Tel Aviv (TLV)', 'Cape Town (CPT)', 'FC'],
-      ['114-64228592', '2440328', 'Tel Aviv (TLV)', 'Lima (LIM)', 'Fritz'],
+      ['057-58874082', '3007506', 'Delhi (DEL)', 'Santiago (SCL)', 'DIVYA'],
+      ['618-53281141', '3007508', 'Delhi (DEL)', 'Melbourne (MEL)', 'DIVYA'],
+      ['729-94581793', '3007511', 'Delhi (DEL)', 'San Pedro Sula (SAP)', 'DIVYA'],
+      ['074-05164585', '3007532', 'Barcelona (BCN)', 'Cape Town (CPT)', 'Unicargo'],
     ],
   },
   forwarders: {
@@ -129,13 +132,12 @@ const STAT_POPUPS = {
     icon: '🤝',
     rows: [
       ['Forwarder', 'Shipments', 'Type'],
-      ['GOA', '4', 'Sea'],
-      ['DHL', '1', 'Sea'],
-      ['FRITZ', '2', 'Sea + Air'],
-      ['Rosenthal', '1', 'Sea'],
-      ['UNICARGO', '2', 'Sea'],
-      ['BDL', '1', 'Sea'],
-      ['FC', '2', 'Air'],
+      ['GOA', '6', 'Sea'],
+      ['BDL', '3', 'Sea'],
+      ['Rosenthal', '3', 'Sea'],
+      ['UNICARGO', '6', 'Sea'],
+      ['DIVYA', '3', 'Air'],
+      ['Unicargo', '1', 'Air'],
     ],
   },
 };
@@ -224,6 +226,8 @@ function TrackingResult({ data, docsData, docsLoading, token }) {
   const vessels = data.vessels || [];
   const container = containers[0] || {};
   const events = container.events || [];
+  const localShipment = data.localShipment || null;
+  const isLocalFallback = data.isLocalFallback === true;
 
   const locMap = {};
   (data.locations || []).forEach(l => { locMap[l.id] = l; });
@@ -274,6 +278,22 @@ function TrackingResult({ data, docsData, docsLoading, token }) {
         <div className="container-number">{metadata.number || '—'}</div>
         <span className={`status-badge ${getStatusClass(status)}`}>{status.replace(/_/g, ' ')}</span>
       </div>
+
+      {/* Local Shipment Data Banner */}
+      {localShipment && (
+        <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: '10px 14px', margin: '8px 0', fontSize: 12 }}>
+          <div style={{ fontWeight: 700, color: '#0369a1', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>📋</span> MIND Shipment Data {isLocalFallback && <span style={{ background: '#fef3c7', color: '#92400e', padding: '2px 6px', borderRadius: 4, fontSize: 10, fontWeight: 600 }}>LOCAL</span>}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '4px 16px', color: '#334155' }}>
+            <div><strong>Shipment:</strong> {localShipment.shipmentNo}</div>
+            <div><strong>MBL:</strong> {localShipment.mbl}</div>
+            <div><strong>Forwarder:</strong> {localShipment.forwarder}</div>
+            <div><strong>SCAC:</strong> {localShipment.scac}</div>
+            <div style={{ gridColumn: '1 / -1' }}><strong>Containers:</strong> {localShipment.containers.join(', ')}</div>
+          </div>
+        </div>
+      )}
 
       {(polLoc.name || podLoc.name) && (
         <div className="route-visual">
@@ -1087,7 +1107,18 @@ export default function ClientPortal() {
       const res = await axios.get(`/api/containers/track/${encodeURIComponent(trackingNumber.trim())}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const innerData = res.data.data || res.data;
+
+      const responseData = res.data;
+      const innerData = responseData.data || responseData;
+      const localShipment = responseData.localShipment || innerData.localShipment || null;
+      const isLocalFallback = responseData.isLocalFallback === true;
+
+      // Attach local shipment info to the data for display
+      if (localShipment) {
+        innerData.localShipment = localShipment;
+        innerData.isLocalFallback = isLocalFallback;
+      }
+
       setTrackingData(innerData);
 
       const route = innerData?.route || {};
@@ -1116,8 +1147,11 @@ export default function ClientPortal() {
         }
       });
 
-      // Auto-fetch documents for the tracked container
-      fetchDocuments(trackingNumber.trim().toUpperCase());
+      // Auto-fetch documents: if local shipment found, try first container; otherwise use search input
+      const docContainer = localShipment
+        ? (localShipment.containers && localShipment.containers[0]) || trackingNumber.trim().toUpperCase()
+        : trackingNumber.trim().toUpperCase();
+      fetchDocuments(docContainer);
 
       setTrackedContainers(prev => {
         const existing = prev.find(c => c.number === trackingNumber.trim().toUpperCase());
@@ -1125,7 +1159,7 @@ export default function ClientPortal() {
         return [...prev, {
           number: trackingNumber.trim().toUpperCase(),
           status: metadata.status || container.status || 'UNKNOWN',
-          carrier: metadata.carrier_name || metadata.carrier_scac || '—',
+          carrier: metadata.carrier_name || metadata.carrier_scac || localShipment?.scac || '—',
           polCode: polLoc?.locode || '',
           podCode: podLoc?.locode || '',
           polName: polLoc?.name || '—',

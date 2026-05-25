@@ -17,20 +17,119 @@ function loadAirShipments() {
   }
 }
 
+// Load MIND sea shipments data
+const SEA_SHIPMENTS_PATH = path.join(__dirname, '..', 'data', 'seaShipments.json');
+function loadSeaShipments() {
+  try {
+    return JSON.parse(fs.readFileSync(SEA_SHIPMENTS_PATH, 'utf8'));
+  } catch (e) {
+    return [];
+  }
+}
+
+/**
+ * GET /api/containers/sea/shipments
+ * Returns the MIND sea shipments list, optionally filtered by query.
+ * Query params: q (search term matching shipmentNo, mbl, containers, forwarder, scac)
+ */
+router.get('/sea/shipments', authenticateToken, (req, res) => {
+  const q = (req.query.q || '').toLowerCase().trim();
+  let shipments = loadSeaShipments();
+  if (q) {
+    shipments = shipments.filter(s =>
+      (s.shipmentNo || '').toLowerCase().includes(q) ||
+      (s.mbl || '').toLowerCase().includes(q) ||
+      (s.containers || []).some(c => c.toLowerCase().includes(q)) ||
+      (s.forwarder || '').toLowerCase().includes(q) ||
+      (s.scac || '').toLowerCase().includes(q)
+    );
+  }
+  return res.json({ shipments, total: shipments.length });
+});
+
 /**
  * GET /api/containers/track/:number
  * Track a container by container number, B/L, or booking reference.
+ * PRIORITY: Check local sea shipments data FIRST, then call the Searates API.
+ * If found locally, return local data + flag for docs availability.
  */
 router.get('/track/:number', authenticateToken, async (req, res) => {
   const { number } = req.params;
   const { type } = req.query;
+  const query = (number || '').trim().toUpperCase();
+
+  // 1. Check local sea shipments data first (match by MBL, container, or shipment number)
+  const seaShipments = loadSeaShipments();
+  const localMatch = seaShipments.find(s => {
+    const mblMatch = (s.mbl || '').toUpperCase().replace(/\s/g, '') === query.replace(/\s/g, '');
+    const containerMatch = (s.containers || []).some(c => c.toUpperCase() === query);
+    const shipmentMatch = (s.shipmentNo || '').toUpperCase() === query;
+    return mblMatch || containerMatch || shipmentMatch;
+  });
+
+  // 2. Try the Searates API
+  let apiData = null;
+  let apiError = null;
   try {
-    const data = await trackContainer(number, type || null);
-    return res.json(data);
+    apiData = await trackContainer(query, type || null);
   } catch (err) {
-    console.error('Tracking error:', err.response?.data || err.message);
-    return res.status(500).json({ error: 'Failed to fetch container tracking information', details: err.message });
+    apiError = err;
+    console.error('Tracking API error:', err.response?.data || err.message);
   }
+
+  // 3. If API returned valid data, enrich with local info and return
+  if (apiData && apiData.data) {
+    if (localMatch) {
+      apiData.localShipment = localMatch;
+      apiData.hasLocalDocs = true;
+    }
+    return res.json(apiData);
+  }
+
+  // 4. If API failed but we have local data, return a structured fallback
+  if (localMatch) {
+    return res.json({
+      success: true,
+      status_code: 'LOCAL_DATA',
+      isLocalFallback: true,
+      localShipment: localMatch,
+      hasLocalDocs: true,
+      data: {
+        metadata: {
+          number: query,
+          type: 'CT',
+          sealine: localMatch.scac,
+          sealine_name: localMatch.scac,
+          status: 'IN_TRANSIT',
+          updated_at: new Date().toISOString(),
+        },
+        route: {
+          pol: { location: 'origin' },
+          pod: { location: 'destination' },
+        },
+        locations: [],
+        containers: [{
+          number: localMatch.containers[0] || query,
+          iso_code: '',
+          size_type: '40\' HC DRY',
+          status: 'IN_TRANSIT',
+          events: [],
+        }],
+        vessels: [],
+        shipmentNo: localMatch.shipmentNo,
+        mbl: localMatch.mbl,
+        forwarder: localMatch.forwarder,
+        scac: localMatch.scac,
+        allContainers: localMatch.containers,
+      }
+    });
+  }
+
+  // 5. No local data and API failed — return error
+  if (apiError) {
+    return res.status(500).json({ error: 'Failed to fetch container tracking information', details: apiError.message });
+  }
+  return res.json(apiData);
 });
 
 /**

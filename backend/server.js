@@ -98,3 +98,4 @@ process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
   process.exit(1);
 });
+// Backend restart trigger: Mon May 25 11:39:17 EDT 2026

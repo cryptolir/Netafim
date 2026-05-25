@@ -16,6 +16,7 @@ const DOCS_DIR = path.join(__dirname, '..', '..', 'sample_documents');
 
 // Human-readable labels for each document type code
 const DOC_LABELS = {
+  AWB:         { label: 'Air Waybill',             icon: '✈️' },
   BL_DRAFT:    { label: 'Bill of Lading (Draft)', icon: '📄' },
   SWB:         { label: 'Sea Waybill',             icon: '🌊' },
   INV:         { label: 'Commercial Invoice',      icon: '🧾' },
@@ -27,7 +28,7 @@ const DOC_LABELS = {
 };
 
 // Preferred display order
-const DOC_ORDER = ['BL_DRAFT','SWB','INV','PROFORMA_INV','PL','COO','COC','BANK_TRANSFER'];
+const DOC_ORDER = ['AWB','BL_DRAFT','SWB','INV','PROFORMA_INV','PL','COO','COC','BANK_TRANSFER'];
 
 /**
  * Parse the docs directory and return a map: containerNo -> [docObject, ...]
@@ -39,10 +40,10 @@ function buildDocMap() {
   const map = {};
   files.forEach(filename => {
     if (!filename.endsWith('.pdf')) return;
-    // Filename format: {CONTAINER}_{DOCTYPE}.pdf
-    // DOCTYPE may contain underscores (e.g. BL_DRAFT, PROFORMA_INV, BANK_TRANSFER)
-    // Container numbers are always 11 chars (4 letters + 7 digits)
-    const match = filename.match(/^([A-Z]{4}\d{7})_(.+)\.pdf$/);
+    // Filename format: {ID}_{DOCTYPE}.pdf
+    // ID can be a container number (4 letters + 7 digits, e.g. BMOU6008700)
+    // or an AWB ID (AWB + digits, e.g. AWB70051280213)
+    const match = filename.match(/^([A-Z]{3,4}\d{7,11})_(.+)\.pdf$/);
     if (!match) return;
     const containerNo = match[1];
     const typeCode    = match[2];

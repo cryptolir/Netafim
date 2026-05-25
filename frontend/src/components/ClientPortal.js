@@ -512,7 +512,7 @@ function SchedulesResult({ data }) {
 }
 
 // ── Air Tracking Result ────────────────────────────────────────────────────
-function AirTrackingResult({ data }) {
+function AirTrackingResult({ data, docsData, docsLoading, token }) {
   if (!data) return null;
   const meta = data.metadata || {};
   const info = data.data || {};
@@ -707,6 +707,41 @@ function AirTrackingResult({ data }) {
             ))}
           </div>
         </>
+      )}
+
+      {/* Shipment Documents */}
+      {(docsLoading || (docsData && docsData.docs && docsData.docs.length > 0)) && (
+        <div className="docs-section" style={{ marginTop: 16 }}>
+          <div className="docs-col-title" style={{ fontWeight: 600, fontSize: 13, color: 'var(--gray-700)', marginBottom: 8 }}>📎 Shipment Documents</div>
+          {docsLoading && <div className="docs-loading">Loading documents…</div>}
+          {docsData && docsData.docs && docsData.docs.length > 0 && (
+            <div className="docs-list">
+              {docsData.docs.map(doc => (
+                <a
+                  key={doc.filename}
+                  href={`/api/documents/download/${encodeURIComponent(doc.filename)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="doc-item"
+                  onClick={e => {
+                    e.preventDefault();
+                    fetch(`/api/documents/download/${encodeURIComponent(doc.filename)}`, {
+                      headers: { Authorization: `Bearer ${token}` }
+                    })
+                      .then(r => r.blob())
+                      .then(blob => {
+                        const url = URL.createObjectURL(blob);
+                        window.open(url, '_blank');
+                      });
+                  }}
+                >
+                  <span className="doc-icon">{doc.icon}</span>
+                  <span className="doc-label">{doc.label}</span>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -1228,6 +1263,10 @@ export default function ClientPortal() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAirTrackingData(res.data);
+      // Auto-fetch documents: try AWB-prefixed ID (e.g. AWB70051280213)
+      const cleanAwb = awbNumber.trim().replace(/[^0-9]/g, '');
+      const awbDocId = `AWB${cleanAwb}`;
+      fetchDocuments(awbDocId);
     } catch (err) {
       setAirTrackingError(err.response?.data?.error || 'Failed to fetch air tracking information. Please check the AWB number.');
     } finally {
@@ -1514,7 +1553,7 @@ export default function ClientPortal() {
                   </div>
                 )}
                 {airTrackingError && <div className="error-state">⚠️ {airTrackingError}</div>}
-                {airTrackingData && <AirTrackingResult data={airTrackingData} />}
+                {airTrackingData && <AirTrackingResult data={airTrackingData} docsData={docsData} docsLoading={docsLoading} token={token} />}
               </div>
 
               {/* ── MIND Air Shipments ── */}

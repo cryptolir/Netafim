@@ -521,6 +521,29 @@ function AirTrackingResult({ data, docsData, docsLoading, token }) {
   const airline = meta.airline || {};
   const status = info.status || 'Unknown';
   const isFallback = data.isFallback === true;
+  const hasDocs = docsData && docsData.docs && docsData.docs.length > 0;
+
+  const [previewDoc, setPreviewDoc] = React.useState(null);
+  const [previewLoading, setPreviewLoading] = React.useState(false);
+
+  const openPreview = async (doc) => {
+    setPreviewLoading(true);
+    try {
+      const res = await fetch(doc.downloadUrl, { headers: { Authorization: `Bearer ${token}` } });
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      setPreviewDoc({ label: doc.label, blobUrl, filename: doc.filename });
+    } catch {
+      alert('Could not load preview.');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const closePreview = () => {
+    if (previewDoc?.blobUrl) URL.revokeObjectURL(previewDoc.blobUrl);
+    setPreviewDoc(null);
+  };
 
   const statusColor = (s) => {
     if (!s) return '#94a3b8';
@@ -531,15 +554,72 @@ function AirTrackingResult({ data, docsData, docsLoading, token }) {
     return '#94a3b8';
   };
 
-  // ── Fallback card (MIND data only) ──────────────────────────────────────
+  // Docs panel — shared by both fallback and live views
+  const DocsPanel = () => (
+    (docsLoading || hasDocs) ? (
+      <div className="docs-col">
+        <div className="docs-col-header">
+          <span className="docs-col-title">📎 Documents</span>
+        </div>
+        {docsLoading && <div className="docs-loading">Loading documents…</div>}
+        {hasDocs && (
+          <div className="docs-list">
+            {docsData.docs.map(doc => (
+              <div key={doc.filename} className="doc-row">
+                <span className="doc-row-icon">{doc.icon}</span>
+                <span className="doc-row-label">{doc.label}</span>
+                <div className="doc-row-actions">
+                  <button
+                    className="doc-btn doc-btn-preview"
+                    title="Preview"
+                    disabled={previewLoading}
+                    onClick={() => openPreview(doc)}
+                  >👁</button>
+                  <button
+                    className="doc-btn doc-btn-download"
+                    title="Download"
+                    onClick={() => {
+                      fetch(doc.downloadUrl, { headers: { Authorization: `Bearer ${token}` } })
+                        .then(r => r.blob())
+                        .then(blob => {
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url; a.download = doc.filename; a.click();
+                          URL.revokeObjectURL(url);
+                        });
+                    }}
+                  >↓</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    ) : null
+  );
+
+  // ── Fallback card (MIND data only) ────────────────────────────────────────────────
   if (isFallback) {
     return (
       <div className="tracking-result">
+        {previewDoc && (
+          <div className="doc-preview-overlay" onClick={closePreview}>
+            <div className="doc-preview-modal" onClick={e => e.stopPropagation()}>
+              <div className="doc-preview-header">
+                <span className="doc-preview-title">📄 {previewDoc.label}</span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <a href={previewDoc.blobUrl} download={previewDoc.filename} className="doc-preview-dl-btn" title="Download">↓ Download</a>
+                  <button className="doc-preview-close" onClick={closePreview}>✕</button>
+                </div>
+              </div>
+              <iframe src={previewDoc.blobUrl} title={previewDoc.label} className="doc-preview-iframe" />
+            </div>
+          </div>
+        )}
         <div className="tracking-header">
           <div className="container-number" style={{ fontSize: 14 }}>✈️ {info.awb || meta.request_parameters?.number || '—'}</div>
           <span className="status-badge" style={{ background: '#2563eb', color: '#fff', borderRadius: 6, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>IN TRANSIT</span>
         </div>
-        {/* Route visual using file data */}
         <div className="route-visual">
           <div className="route-port">
             <div className="port-code">{info.origin ? info.origin.match(/\(([^)]+)\)/)?.[1] || 'TLV' : 'TLV'}</div>
@@ -555,29 +635,38 @@ function AirTrackingResult({ data, docsData, docsLoading, token }) {
           </div>
         </div>
         <div className="tracking-meta">
-          <div className="meta-item">
-            <div className="meta-label">AWB</div>
-            <div className="meta-value" style={{ fontFamily: 'monospace' }}>{info.awb || '—'}</div>
-          </div>
-          <div className="meta-item">
-            <div className="meta-label">Shipment No.</div>
-            <div className="meta-value" style={{ fontFamily: 'monospace' }}>{info.shipmentNo || '—'}</div>
-          </div>
-          <div className="meta-item">
-            <div className="meta-label">Forwarder</div>
-            <div className="meta-value">{info.forwarder || '—'}</div>
-          </div>
-          <div className="meta-item">
-            <div className="meta-label">Type</div>
-            <div className="meta-value">{info.type || '—'}</div>
-          </div>
+          <div className="meta-item"><div className="meta-label">AWB</div><div className="meta-value" style={{ fontFamily: 'monospace' }}>{info.awb || '—'}</div></div>
+          <div className="meta-item"><div className="meta-label">Shipment No.</div><div className="meta-value" style={{ fontFamily: 'monospace' }}>{info.shipmentNo || '—'}</div></div>
+          <div className="meta-item"><div className="meta-label">Forwarder</div><div className="meta-value">{info.forwarder || '—'}</div></div>
+          <div className="meta-item"><div className="meta-label">Type</div><div className="meta-value">{info.type || '—'}</div></div>
         </div>
+        {(docsLoading || hasDocs) && (
+          <div className="events-docs-row">
+            <div className="events-col" />
+            <DocsPanel />
+          </div>
+        )}
       </div>
     );
   }
 
   return (
     <div className="tracking-result">
+      {previewDoc && (
+        <div className="doc-preview-overlay" onClick={closePreview}>
+          <div className="doc-preview-modal" onClick={e => e.stopPropagation()}>
+            <div className="doc-preview-header">
+              <span className="doc-preview-title">📄 {previewDoc.label}</span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <a href={previewDoc.blobUrl} download={previewDoc.filename} className="doc-preview-dl-btn" title="Download">↓ Download</a>
+                <button className="doc-preview-close" onClick={closePreview}>✕</button>
+              </div>
+            </div>
+            <iframe src={previewDoc.blobUrl} title={previewDoc.label} className="doc-preview-iframe" />
+          </div>
+        </div>
+      )}
+
       <div className="tracking-header">
         <div className="container-number" style={{ fontSize: 14 }}>
           ✈️ {meta.request_parameters?.number || '—'}
@@ -651,96 +740,47 @@ function AirTrackingResult({ data, docsData, docsLoading, token }) {
       {/* Route legs */}
       {routes.length > 0 && (
         <>
-          <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--gray-700)', marginBottom: 8, marginTop: 4 }}>
-            Flight Legs
-          </div>
+          <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--gray-700)', marginBottom: 8, marginTop: 4 }}>Flight Legs</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {routes.map((leg, i) => (
-              <div key={i} style={{
-                background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8,
-                padding: '10px 12px', borderLeft: `3px solid ${statusColor(leg.status)}`
-              }}>
+              <div key={i} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 12px', borderLeft: `3px solid ${statusColor(leg.status)}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <span style={{ fontWeight: 700, fontSize: 12, fontFamily: 'monospace' }}>
-                    {leg.from?.iata_code} → {leg.to?.iata_code}
-                  </span>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, color: '#fff',
-                    background: statusColor(leg.status), borderRadius: 4, padding: '2px 6px'
-                  }}>{(leg.status || '').replace(/_/g, ' ')}</span>
+                  <span style={{ fontWeight: 700, fontSize: 12, fontFamily: 'monospace' }}>{leg.from?.iata_code} → {leg.to?.iata_code}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', background: statusColor(leg.status), borderRadius: 4, padding: '2px 6px' }}>{(leg.status || '').replace(/_/g, ' ')}</span>
                 </div>
-                <div style={{ fontSize: 11, color: '#64748b' }}>
-                  ✈️ {leg.flight_number || '—'} &nbsp;·&nbsp;
-                  {leg.transport_type === 'TRUCK' ? '🚛 Truck' : '✈️ Air'}
-                </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>
-                  Dep: {formatDate(leg.departure_datetime_local?.actual || leg.departure_datetime_local?.estimated)}
-                  &nbsp;→&nbsp;
-                  Arr: {formatDate(leg.arrival_datetime_local?.actual || leg.arrival_datetime_local?.estimated)}
-                </div>
+                <div style={{ fontSize: 11, color: '#64748b' }}>✈️ {leg.flight_number || '—'} &nbsp;·&nbsp; {leg.transport_type === 'TRUCK' ? '🚛 Truck' : '✈️ Air'}</div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>Dep: {formatDate(leg.departure_datetime_local?.actual || leg.departure_datetime_local?.estimated)} &nbsp;→&nbsp; Arr: {formatDate(leg.arrival_datetime_local?.actual || leg.arrival_datetime_local?.estimated)}</div>
               </div>
             ))}
           </div>
         </>
       )}
 
-      {/* Events */}
-      {events.length > 0 && (
-        <>
-          <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--gray-700)', marginBottom: 8, marginTop: 12 }}>
-            Shipment Events
-          </div>
-          <div className="timeline">
-            {events.slice(0, 10).map((ev, i) => (
-              <div key={i} className={`timeline-event ${ev.datetime_local?.actual ? 'actual' : 'estimated'}`}>
-                <div className="event-date">
-                  {formatDate(ev.datetime_local?.actual || ev.datetime_local?.estimated)}
-                  {!ev.datetime_local?.actual ? ' (est.)' : ''}
-                </div>
-                <div className="event-desc">{ev.description || ev.event_code}</div>
-                <div className="event-location">
-                  {ev.location?.nearest_city || ev.location?.name || ''}
-                  {ev.location?.country ? `, ${ev.location.country}` : ''}
-                  {ev.flight_number ? ` · ✈️ ${ev.flight_number}` : ''}
-                </div>
+      {/* Events + Documents side-by-side */}
+      {(events.length > 0 || docsLoading || hasDocs) && (
+        <div className="events-docs-row">
+          {events.length > 0 && (
+            <div className="events-col">
+              <div className="events-col-title">Shipment Events</div>
+              <div className="timeline">
+                {events.slice(0, 10).map((ev, i) => (
+                  <div key={i} className={`timeline-event ${ev.datetime_local?.actual ? 'actual' : 'estimated'}`}>
+                    <div className="event-date">
+                      {formatDate(ev.datetime_local?.actual || ev.datetime_local?.estimated)}
+                      {!ev.datetime_local?.actual ? ' (est.)' : ''}
+                    </div>
+                    <div className="event-desc">{ev.description || ev.event_code}</div>
+                    <div className="event-location">
+                      {ev.location?.nearest_city || ev.location?.name || ''}
+                      {ev.location?.country ? `, ${ev.location.country}` : ''}
+                      {ev.flight_number ? ` · ✈️ ${ev.flight_number}` : ''}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Shipment Documents */}
-      {(docsLoading || (docsData && docsData.docs && docsData.docs.length > 0)) && (
-        <div className="docs-section" style={{ marginTop: 16 }}>
-          <div className="docs-col-title" style={{ fontWeight: 600, fontSize: 13, color: 'var(--gray-700)', marginBottom: 8 }}>📎 Shipment Documents</div>
-          {docsLoading && <div className="docs-loading">Loading documents…</div>}
-          {docsData && docsData.docs && docsData.docs.length > 0 && (
-            <div className="docs-list">
-              {docsData.docs.map(doc => (
-                <a
-                  key={doc.filename}
-                  href={`/api/documents/download/${encodeURIComponent(doc.filename)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="doc-item"
-                  onClick={e => {
-                    e.preventDefault();
-                    fetch(`/api/documents/download/${encodeURIComponent(doc.filename)}`, {
-                      headers: { Authorization: `Bearer ${token}` }
-                    })
-                      .then(r => r.blob())
-                      .then(blob => {
-                        const url = URL.createObjectURL(blob);
-                        window.open(url, '_blank');
-                      });
-                  }}
-                >
-                  <span className="doc-icon">{doc.icon}</span>
-                  <span className="doc-label">{doc.label}</span>
-                </a>
-              ))}
             </div>
           )}
+          <DocsPanel />
         </div>
       )}
     </div>

@@ -1221,12 +1221,11 @@ body {
 
 .map-toolbar {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   padding: 10px 16px;
   background: var(--gray-50);
   border-bottom: 1px solid var(--gray-200);
-  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -1235,6 +1234,8 @@ body {
   align-items: center;
   gap: 14px;
   flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
 }
 
 .legend-item {
@@ -1266,6 +1267,8 @@ body {
 .map-layer-btns {
   display: flex;
   gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .map-layer-btn {

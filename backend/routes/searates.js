@@ -229,34 +229,55 @@ router.get('/air/track/:awb', authenticateToken, async (req, res) => {
   });
   };
 
+  // Helper: search local file for this AWB
+  const findLocalMatch = () => {
+    const shipments = loadAirShipments();
+    const normalised = awb.replace(/[\s-]/g, '').toLowerCase();
+    return shipments.find(s =>
+      s.awb.replace(/[\s-]/g, '').toLowerCase() === normalised ||
+      s.shipmentNo === awb.trim()
+    );
+  };
+
   try {
     const data = await trackAirShipment(awb);
 
-    // If the API returned no useful data (WRONG_NUMBER, API_KEY_ACCESS_DENIED, empty data)
-    const isEmpty = !data || !data.success ||
-      ['WRONG_NUMBER', 'API_KEY_ACCESS_DENIED', 'NO_DATA'].includes(data.status_code) ||
-      (data.data && Object.keys(data.data).length === 0);
+    // API is down / key issues — fall back to local file
+    const isApiDown = !data || !data.success &&
+      ['API_KEY_LIMIT_REACHED', 'API_KEY_ACCESS_DENIED', 'API_KEY_WRONG'].includes(data.status_code);
 
-    if (isEmpty) {
-      const shipments = loadAirShipments();
-      const normalised = awb.replace(/\s/g, '').toLowerCase();
-      const match = shipments.find(s =>
-        s.awb.replace(/\s/g, '').toLowerCase() === normalised ||
-        s.shipmentNo === awb.trim()
-      );
+    if (isApiDown) {
+      const match = findLocalMatch();
       if (match) return res.json(buildFallback(match));
+      return res.status(503).json({ error: 'Tracking API unavailable and no local data found for this AWB.' });
+    }
+
+    // AWB not found in API — try local file, then return API response
+    const isNotFound = !data.success &&
+      ['WRONG_NUMBER', 'NO_DATA', 'NOT_FOUND'].includes(data.status_code);
+
+    if (isNotFound) {
+      const match = findLocalMatch();
+      if (match) return res.json(buildFallback(match));
+    }
+
+    // API returned valid data — enrich with local MIND metadata if available
+    if (data && data.success) {
+      const match = findLocalMatch();
+      if (match) {
+        // Attach MIND metadata (shipmentNo, forwarder) to the API response
+        if (data.data) {
+          data.data.mindShipmentNo = match.shipmentNo;
+          data.data.mindForwarder = match.forwarder;
+        }
+      }
     }
 
     return res.json(data);
   } catch (err) {
     console.error('Air tracking error:', err.response?.data || err.message);
-    // Try fallback before returning an error
-    const shipments = loadAirShipments();
-    const normalised = awb.replace(/\s/g, '').toLowerCase();
-    const match = shipments.find(s =>
-      s.awb.replace(/\s/g, '').toLowerCase() === normalised ||
-      s.shipmentNo === awb.trim()
-    );
+    // Network/timeout error — fall back to local file
+    const match = findLocalMatch();
     if (match) return res.json(buildFallback(match));
     return res.status(500).json({ error: 'Failed to fetch air shipment tracking information', details: err.message });
   }

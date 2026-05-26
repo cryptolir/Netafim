@@ -523,6 +523,18 @@ function AirTrackingResult({ data, docsData, docsLoading, token }) {
   const isFallback = data.isFallback === true;
   const hasDocs = docsData && docsData.docs && docsData.docs.length > 0;
 
+  // Build unique station list from routes (all legs: from → to)
+  const buildStations = () => {
+    if (!routes.length) return [];
+    const stations = [];
+    routes.forEach((leg, i) => {
+      if (i === 0 && leg.from) stations.push({ airport: leg.from, dep: leg.departure_datetime_local, isOrigin: true });
+      if (leg.to) stations.push({ airport: leg.to, arr: leg.arrival_datetime_local, dep: routes[i+1]?.departure_datetime_local, flightIn: leg.flight_number, statusIn: leg.status, isDestination: i === routes.length - 1 });
+    });
+    return stations;
+  };
+  const stations = buildStations();
+
   const [previewDoc, setPreviewDoc] = React.useState(null);
   const [previewLoading, setPreviewLoading] = React.useState(false);
 
@@ -677,84 +689,76 @@ function AirTrackingResult({ data, docsData, docsLoading, token }) {
         }}>{status.replace(/_/g, ' ')}</span>
       </div>
 
-      {/* Route visual */}
-      {(info.from || info.to) && (
+      {/* Multi-stop route visual: all stations */}
+      {stations.length > 0 ? (
+        <div style={{ overflowX: 'auto', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', minWidth: stations.length * 120, gap: 0 }}>
+            {stations.map((st, i) => (
+              <React.Fragment key={i}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 100, flex: '0 0 auto' }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: st.isOrigin ? '#0d2b4e' : st.isDestination ? (status.toLowerCase() === 'delivered' ? '#16a34a' : '#2563eb') : '#e2e8f0',
+                    color: (st.isOrigin || st.isDestination) ? '#fff' : '#64748b',
+                    fontSize: 14, fontWeight: 700, border: '2px solid',
+                    borderColor: st.isOrigin ? '#0d2b4e' : st.isDestination ? (status.toLowerCase() === 'delivered' ? '#16a34a' : '#2563eb') : '#cbd5e1'
+                  }}>
+                    {st.isOrigin ? '✈' : st.isDestination ? '📍' : '⬤'}
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: 13, marginTop: 4, color: '#0d2b4e' }}>{st.airport?.iata_code || '—'}</div>
+                  <div style={{ fontSize: 10, color: '#64748b', textAlign: 'center', maxWidth: 90 }}>{st.airport?.nearest_city || st.airport?.name || ''}</div>
+                  {st.isOrigin && st.dep && (
+                    <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 2 }}>Dep: {formatDate(st.dep?.actual || st.dep?.estimated)}</div>
+                  )}
+                  {!st.isOrigin && st.arr && (
+                    <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 2 }}>Arr: {formatDate(st.arr?.actual || st.arr?.estimated)}</div>
+                  )}
+                  {!st.isOrigin && !st.isDestination && st.dep && (
+                    <div style={{ fontSize: 9, color: '#94a3b8' }}>Dep: {formatDate(st.dep?.actual || st.dep?.estimated)}</div>
+                  )}
+                  {st.flightIn && !st.isOrigin && (
+                    <div style={{ fontSize: 9, color: '#2563eb', marginTop: 1 }}>✈️ {st.flightIn}</div>
+                  )}
+                </div>
+                {i < stations.length - 1 && (
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 14, minWidth: 40 }}>
+                    <div style={{ width: '100%', height: 2, background: statusColor(routes[i]?.status || 'in_transit'), borderRadius: 2, position: 'relative' }}>
+                      <span style={{ position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%)', fontSize: 12 }}>✈</span>
+                    </div>
+                    {routes[i]?.flight_number && (
+                      <div style={{ fontSize: 9, color: '#64748b', marginTop: 6, whiteSpace: 'nowrap' }}>{routes[i].flight_number}</div>
+                    )}
+                  </div>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      ) : (info.from || info.to) && (
         <div className="route-visual">
           <div className="route-port">
             <div className="port-code">{info.from?.iata_code || '—'}</div>
             <div className="port-name">{info.from?.nearest_city || info.from?.name || 'Origin'}</div>
             <div className="port-date">{formatDate(info.departure_datetime_local?.actual || info.departure_datetime_local?.estimated)}</div>
           </div>
-          <div className="route-arrow">
-            <div className="route-line" />
-            <div className="route-vessel">✈️ {airline.name || info.flight_number || ''}</div>
-          </div>
+          <div className="route-arrow"><div className="route-line" /><div className="route-vessel">✈️ {airline.name || ''}</div></div>
           <div className="route-port">
             <div className="port-code">{info.to?.iata_code || '—'}</div>
             <div className="port-name">{info.to?.nearest_city || info.to?.name || 'Destination'}</div>
-            <div className="port-date">
-              {info.arrival_datetime_local?.actual
-                ? `Arrived: ${formatDate(info.arrival_datetime_local.actual)}`
-                : info.arrival_datetime_local?.estimated
-                  ? `ETA: ${formatDate(info.arrival_datetime_local.estimated)}`
-                  : '—'}
-            </div>
+            <div className="port-date">{info.arrival_datetime_local?.actual ? `Arrived: ${formatDate(info.arrival_datetime_local.actual)}` : info.arrival_datetime_local?.estimated ? `ETA: ${formatDate(info.arrival_datetime_local.estimated)}` : '—'}</div>
           </div>
         </div>
       )}
 
       {/* Meta info */}
       <div className="tracking-meta">
-        {airline.name && (
-          <div className="meta-item">
-            <div className="meta-label">Airline</div>
-            <div className="meta-value">{airline.name} ({airline.iata_code})</div>
-          </div>
-        )}
-        {info.flight_number && (
-          <div className="meta-item">
-            <div className="meta-label">Flight</div>
-            <div className="meta-value">{info.flight_number}</div>
-          </div>
-        )}
-        {info.piece !== undefined && (
-          <div className="meta-item">
-            <div className="meta-label">Pieces</div>
-            <div className="meta-value">{info.piece}</div>
-          </div>
-        )}
-        {info.weight !== undefined && (
-          <div className="meta-item">
-            <div className="meta-label">Weight</div>
-            <div className="meta-value">{info.weight} kg</div>
-          </div>
-        )}
-        {meta.updated_at && (
-          <div className="meta-item">
-            <div className="meta-label">Last Updated</div>
-            <div className="meta-value">{formatDate(meta.updated_at)}</div>
-          </div>
-        )}
+        {airline.name && <div className="meta-item"><div className="meta-label">Airline</div><div className="meta-value">{airline.name}{airline.iata_code ? ` (${airline.iata_code})` : ''}</div></div>}
+        {info.mindForwarder && <div className="meta-item"><div className="meta-label">Forwarder</div><div className="meta-value">{info.mindForwarder}</div></div>}
+        {info.mindShipmentNo && <div className="meta-item"><div className="meta-label">Shipment No.</div><div className="meta-value" style={{ fontFamily: 'monospace' }}>{info.mindShipmentNo}</div></div>}
+        {info.piece !== undefined && <div className="meta-item"><div className="meta-label">Pieces</div><div className="meta-value">{info.piece}</div></div>}
+        {info.weight !== undefined && <div className="meta-item"><div className="meta-label">Weight</div><div className="meta-value">{info.weight} kg</div></div>}
+        {meta.updated_at && <div className="meta-item"><div className="meta-label">Last Updated</div><div className="meta-value">{formatDate(meta.updated_at)}</div></div>}
       </div>
-
-      {/* Route legs */}
-      {routes.length > 0 && (
-        <>
-          <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--gray-700)', marginBottom: 8, marginTop: 4 }}>Flight Legs</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {routes.map((leg, i) => (
-              <div key={i} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 12px', borderLeft: `3px solid ${statusColor(leg.status)}` }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <span style={{ fontWeight: 700, fontSize: 12, fontFamily: 'monospace' }}>{leg.from?.iata_code} → {leg.to?.iata_code}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', background: statusColor(leg.status), borderRadius: 4, padding: '2px 6px' }}>{(leg.status || '').replace(/_/g, ' ')}</span>
-                </div>
-                <div style={{ fontSize: 11, color: '#64748b' }}>✈️ {leg.flight_number || '—'} &nbsp;·&nbsp; {leg.transport_type === 'TRUCK' ? '🚛 Truck' : '✈️ Air'}</div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>Dep: {formatDate(leg.departure_datetime_local?.actual || leg.departure_datetime_local?.estimated)} &nbsp;→&nbsp; Arr: {formatDate(leg.arrival_datetime_local?.actual || leg.arrival_datetime_local?.estimated)}</div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
 
       {/* Events + Documents side-by-side */}
       {(events.length > 0 || docsLoading || hasDocs) && (
@@ -763,14 +767,15 @@ function AirTrackingResult({ data, docsData, docsLoading, token }) {
             <div className="events-col">
               <div className="events-col-title">Shipment Events</div>
               <div className="timeline">
-                {events.slice(0, 10).map((ev, i) => (
-                  <div key={i} className={`timeline-event ${ev.datetime_local?.actual ? 'actual' : 'estimated'}`}>
+                {events.map((ev, i) => (
+                  <div key={i} className={`timeline-event ${ev.datetime_local?.actual ? 'actual' : 'estimated'} ${i === events.length - 1 ? 'latest' : ''}`}>
                     <div className="event-date">
                       {formatDate(ev.datetime_local?.actual || ev.datetime_local?.estimated)}
                       {!ev.datetime_local?.actual ? ' (est.)' : ''}
                     </div>
                     <div className="event-desc">{ev.description || ev.event_code}</div>
                     <div className="event-location">
+                      {ev.location?.iata_code ? `${ev.location.iata_code} · ` : ''}
                       {ev.location?.nearest_city || ev.location?.name || ''}
                       {ev.location?.country ? `, ${ev.location.country}` : ''}
                       {ev.flight_number ? ` · ✈️ ${ev.flight_number}` : ''}

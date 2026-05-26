@@ -612,6 +612,15 @@ function AirTrackingResult({ data, docsData, docsLoading, token }) {
 
   // ── Fallback card (MIND data only) ────────────────────────────────────────────────
   if (isFallback) {
+    // Build stations from fallback routes
+    const fallbackStations = [];
+    if (routes.length > 0) {
+      routes.forEach((leg, i) => {
+        if (i === 0 && leg.from) fallbackStations.push({ code: leg.from.iata_code || leg.from.name, name: leg.from.name || '', dep: leg.departure, isOrigin: true });
+        if (leg.to) fallbackStations.push({ code: leg.to.iata_code || leg.to.name, name: leg.to.name || '', arr: leg.arrival, flightIn: leg.flight_number, isDestination: i === routes.length - 1 });
+      });
+    }
+
     return (
       <div className="tracking-result">
         {previewDoc && (
@@ -630,31 +639,91 @@ function AirTrackingResult({ data, docsData, docsLoading, token }) {
         )}
         <div className="tracking-header">
           <div className="container-number" style={{ fontSize: 14 }}>✈️ {info.awb || meta.request_parameters?.number || '—'}</div>
-          <span className="status-badge" style={{ background: '#2563eb', color: '#fff', borderRadius: 6, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>IN TRANSIT</span>
+          <span className="status-badge" style={{ background: statusColor(status), color: '#fff', borderRadius: 6, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>{status.toUpperCase()}</span>
         </div>
-        <div className="route-visual">
-          <div className="route-port">
-            <div className="port-code">{info.origin ? info.origin.match(/\(([^)]+)\)/)?.[1] || 'TLV' : 'TLV'}</div>
-            <div className="port-name">{info.origin ? info.origin.replace(/\s*\([^)]*\)/, '') : 'Tel Aviv'}</div>
+
+        {/* Multi-stop route visual for fallback */}
+        {fallbackStations.length > 0 ? (
+          <div style={{ overflowX: 'auto', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', minWidth: fallbackStations.length * 120, gap: 0 }}>
+              {fallbackStations.map((st, i) => (
+                <React.Fragment key={i}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 100, flex: '0 0 auto' }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: st.isOrigin ? '#0d2b4e' : st.isDestination ? '#16a34a' : '#e2e8f0',
+                      color: (st.isOrigin || st.isDestination) ? '#fff' : '#64748b',
+                      fontSize: 14, fontWeight: 700, border: '2px solid',
+                      borderColor: st.isOrigin ? '#0d2b4e' : st.isDestination ? '#16a34a' : '#cbd5e1'
+                    }}>
+                      {st.isOrigin ? '✈' : st.isDestination ? '📍' : '⬤'}
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 13, marginTop: 4, color: '#0d2b4e' }}>{st.code || '—'}</div>
+                    <div style={{ fontSize: 10, color: '#64748b', textAlign: 'center', maxWidth: 90 }}>{st.name || ''}</div>
+                    {st.dep && <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 2 }}>Dep: {formatDate(st.dep)}</div>}
+                    {st.arr && <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 2 }}>Arr: {formatDate(st.arr)}</div>}
+                    {st.flightIn && <div style={{ fontSize: 9, color: '#2563eb', marginTop: 1 }}>✈️ {st.flightIn}</div>}
+                  </div>
+                  {i < fallbackStations.length - 1 && (
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 14, minWidth: 40 }}>
+                      <div style={{ width: '100%', height: 2, background: '#2563eb', borderRadius: 2, position: 'relative' }}>
+                        <span style={{ position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%)', fontSize: 12 }}>✈</span>
+                      </div>
+                      {routes[i]?.flight_number && (
+                        <div style={{ fontSize: 9, color: '#64748b', marginTop: 6, whiteSpace: 'nowrap' }}>{routes[i].flight_number}</div>
+                      )}
+                    </div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
-          <div className="route-arrow">
-            <div className="route-line" />
-            <div className="route-vessel">✈️ Air Export</div>
+        ) : (
+          <div className="route-visual">
+            <div className="route-port">
+              <div className="port-code">{info.origin ? info.origin.match(/\(([^)]+)\)/)?.[1] || 'TLV' : 'TLV'}</div>
+              <div className="port-name">{info.origin ? info.origin.replace(/\s*\([^)]*\)/, '') : 'Tel Aviv'}</div>
+            </div>
+            <div className="route-arrow">
+              <div className="route-line" />
+              <div className="route-vessel">✈️ {info.carrier || 'Air Export'}</div>
+            </div>
+            <div className="route-port">
+              <div className="port-code">{info.destination ? info.destination.match(/\(([^)]+)\)/)?.[1] || info.destination.slice(0,3).toUpperCase() : '—'}</div>
+              <div className="port-name">{info.destination ? info.destination.replace(/\s*\([^)]*\)/, '') : '—'}</div>
+            </div>
           </div>
-          <div className="route-port">
-            <div className="port-code">{info.destination ? info.destination.match(/\(([^)]+)\)/)?.[1] || info.destination.slice(0,3).toUpperCase() : '—'}</div>
-            <div className="port-name">{info.destination ? info.destination.replace(/\s*\([^)]*\)/, '') : '—'}</div>
-          </div>
-        </div>
+        )}
+
         <div className="tracking-meta">
+          {info.carrier && <div className="meta-item"><div className="meta-label">Airline</div><div className="meta-value">{info.carrier}</div></div>}
           <div className="meta-item"><div className="meta-label">AWB</div><div className="meta-value" style={{ fontFamily: 'monospace' }}>{info.awb || '—'}</div></div>
           <div className="meta-item"><div className="meta-label">Shipment No.</div><div className="meta-value" style={{ fontFamily: 'monospace' }}>{info.shipmentNo || '—'}</div></div>
           <div className="meta-item"><div className="meta-label">Forwarder</div><div className="meta-value">{info.forwarder || '—'}</div></div>
           <div className="meta-item"><div className="meta-label">Type</div><div className="meta-value">{info.type || '—'}</div></div>
+          {info.flightNo && <div className="meta-item"><div className="meta-label">Flight</div><div className="meta-value">{info.flightNo}</div></div>}
         </div>
-        {(docsLoading || hasDocs) && (
+
+        {/* Events + Documents side-by-side */}
+        {(events.length > 0 || docsLoading || hasDocs) && (
           <div className="events-docs-row">
-            <div className="events-col" />
+            {events.length > 0 && (
+              <div className="events-col">
+                <div className="events-col-title">Shipment Events</div>
+                <div className="timeline">
+                  {events.map((ev, i) => (
+                    <div key={i} className={`timeline-event actual ${i === events.length - 1 ? 'latest' : ''}`}>
+                      <div className="event-date">{formatDate(ev.date)}</div>
+                      <div className="event-desc">{ev.status}</div>
+                      <div className="event-location">
+                        {ev.location || ''}
+                        {ev.flight ? ` · ✈️ ${ev.flight}` : ''}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <DocsPanel />
           </div>
         )}

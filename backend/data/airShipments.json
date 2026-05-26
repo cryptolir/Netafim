@@ -5,7 +5,26 @@
     "type": "Air Export",
     "forwarder": "FC",
     "origin": "Tel Aviv (TLV)",
-    "destination": "Jakarta (CGK)"
+    "destination": "Jakarta (CGK)",
+    "carrier": "El Al Israel Airlines",
+    "flightNo": "LY315",
+    "events": [
+      { "date": "2026-05-10", "status": "Shipment booked", "location": "Tel Aviv (TLV)", "flight": "LY315" },
+      { "date": "2026-05-11", "status": "Received from shipper", "location": "Tel Aviv (TLV)", "flight": "LY315" },
+      { "date": "2026-05-11", "status": "Accepted by carrier", "location": "Tel Aviv (TLV)", "flight": "LY315" },
+      { "date": "2026-05-12", "status": "Departed", "location": "Tel Aviv (TLV)", "flight": "LY315" },
+      { "date": "2026-05-12", "status": "Arrived at transit hub", "location": "Singapore (SIN)", "flight": "LY315" },
+      { "date": "2026-05-13", "status": "In transit - customs clearance", "location": "Singapore (SIN)", "flight": "SQ952" },
+      { "date": "2026-05-14", "status": "Departed transit hub", "location": "Singapore (SIN)", "flight": "SQ952" },
+      { "date": "2026-05-14", "status": "Arrived at destination", "location": "Jakarta (CGK)", "flight": "SQ952" },
+      { "date": "2026-05-15", "status": "Customs clearance in progress", "location": "Jakarta (CGK)", "flight": "" },
+      { "date": "2026-05-16", "status": "Released by customs", "location": "Jakarta (CGK)", "flight": "" },
+      { "date": "2026-05-16", "status": "Available for pickup", "location": "Jakarta (CGK)", "flight": "" }
+    ],
+    "routes": [
+      { "from": "TLV", "to": "SIN", "flight": "LY315", "departure": "2026-05-12T06:30:00", "arrival": "2026-05-12T23:45:00" },
+      { "from": "SIN", "to": "CGK", "flight": "SQ952", "departure": "2026-05-14T08:15:00", "arrival": "2026-05-14T09:30:00" }
+    ]
   },
   {
     "awb": "71601886340",
@@ -13,7 +32,23 @@
     "type": "Air Export",
     "forwarder": "FC",
     "origin": "Tel Aviv (TLV)",
-    "destination": "Cape Town (CPT)"
+    "destination": "Cape Town (CPT)",
+    "carrier": "Turkish Airlines",
+    "flightNo": "TK790",
+    "events": [
+      { "date": "2026-05-08", "status": "Shipment booked", "location": "Tel Aviv (TLV)", "flight": "TK790" },
+      { "date": "2026-05-09", "status": "Received from shipper", "location": "Tel Aviv (TLV)", "flight": "TK790" },
+      { "date": "2026-05-09", "status": "Departed", "location": "Tel Aviv (TLV)", "flight": "TK790" },
+      { "date": "2026-05-09", "status": "Arrived at transit hub", "location": "Istanbul (IST)", "flight": "TK790" },
+      { "date": "2026-05-10", "status": "Departed transit hub", "location": "Istanbul (IST)", "flight": "TK600" },
+      { "date": "2026-05-11", "status": "Arrived at destination", "location": "Cape Town (CPT)", "flight": "TK600" },
+      { "date": "2026-05-12", "status": "Customs clearance in progress", "location": "Cape Town (CPT)", "flight": "" },
+      { "date": "2026-05-13", "status": "Delivered to consignee", "location": "Cape Town (CPT)", "flight": "" }
+    ],
+    "routes": [
+      { "from": "TLV", "to": "IST", "flight": "TK790", "departure": "2026-05-09T14:00:00", "arrival": "2026-05-09T16:30:00" },
+      { "from": "IST", "to": "CPT", "flight": "TK600", "departure": "2026-05-10T01:15:00", "arrival": "2026-05-10T11:45:00" }
+    ]
   },
   {
     "awb": "11464228592",
@@ -21,7 +56,24 @@
     "type": "Air Export",
     "forwarder": "Fritz",
     "origin": "Tel Aviv (TLV)",
-    "destination": "Lima (LIM)"
+    "destination": "Lima (LIM)",
+    "carrier": "Lufthansa Cargo",
+    "flightNo": "LH689",
+    "events": [
+      { "date": "2026-05-05", "status": "Shipment booked", "location": "Tel Aviv (TLV)", "flight": "LH689" },
+      { "date": "2026-05-06", "status": "Received from shipper", "location": "Tel Aviv (TLV)", "flight": "LH689" },
+      { "date": "2026-05-07", "status": "Departed", "location": "Tel Aviv (TLV)", "flight": "LH689" },
+      { "date": "2026-05-07", "status": "Arrived at transit hub", "location": "Frankfurt (FRA)", "flight": "LH689" },
+      { "date": "2026-05-08", "status": "In transit - connecting flight", "location": "Frankfurt (FRA)", "flight": "LH510" },
+      { "date": "2026-05-09", "status": "Arrived at destination", "location": "Lima (LIM)", "flight": "LH510" },
+      { "date": "2026-05-10", "status": "Customs clearance in progress", "location": "Lima (LIM)", "flight": "" },
+      { "date": "2026-05-11", "status": "Released by customs", "location": "Lima (LIM)", "flight": "" },
+      { "date": "2026-05-12", "status": "Delivered to consignee", "location": "Lima (LIM)", "flight": "" }
+    ],
+    "routes": [
+      { "from": "TLV", "to": "FRA", "flight": "LH689", "departure": "2026-05-07T05:45:00", "arrival": "2026-05-07T10:15:00" },
+      { "from": "FRA", "to": "LIM", "flight": "LH510", "departure": "2026-05-08T13:30:00", "arrival": "2026-05-09T04:00:00" }
+    ]
   },
   {
     "awb": "057-58874082",
@@ -29,7 +81,24 @@
     "type": "Air 3RD",
     "forwarder": "DIVYA",
     "origin": "Delhi (DEL)",
-    "destination": "Santiago (SCL)"
+    "destination": "Santiago (SCL)",
+    "carrier": "Air France",
+    "flightNo": "AF0283",
+    "events": [
+      { "date": "2026-04-28", "status": "Shipment booked", "location": "Delhi (DEL)", "flight": "AF0283" },
+      { "date": "2026-04-29", "status": "Received from shipper", "location": "Delhi (DEL)", "flight": "AF0283" },
+      { "date": "2026-04-30", "status": "Departed", "location": "Delhi (DEL)", "flight": "AF0283" },
+      { "date": "2026-04-30", "status": "Arrived at transit hub", "location": "Paris (CDG)", "flight": "AF0283" },
+      { "date": "2026-05-01", "status": "Departed transit hub", "location": "Paris (CDG)", "flight": "AF0406" },
+      { "date": "2026-05-02", "status": "Arrived at destination", "location": "Santiago (SCL)", "flight": "AF0406" },
+      { "date": "2026-05-03", "status": "Customs clearance in progress", "location": "Santiago (SCL)", "flight": "" },
+      { "date": "2026-05-04", "status": "Released by customs", "location": "Santiago (SCL)", "flight": "" },
+      { "date": "2026-05-05", "status": "Delivered to consignee", "location": "Santiago (SCL)", "flight": "" }
+    ],
+    "routes": [
+      { "from": "DEL", "to": "CDG", "flight": "AF0283", "departure": "2026-04-30T02:00:00", "arrival": "2026-04-30T08:30:00" },
+      { "from": "CDG", "to": "SCL", "flight": "AF0406", "departure": "2026-05-01T11:00:00", "arrival": "2026-05-02T06:30:00" }
+    ]
   },
   {
     "awb": "618-53281141",
@@ -37,7 +106,23 @@
     "type": "Air 3RD",
     "forwarder": "DIVYA",
     "origin": "Delhi (DEL)",
-    "destination": "Melbourne (MEL)"
+    "destination": "Melbourne (MEL)",
+    "carrier": "Singapore Airlines",
+    "flightNo": "SQ403",
+    "events": [
+      { "date": "2026-05-01", "status": "Shipment booked", "location": "Delhi (DEL)", "flight": "SQ403" },
+      { "date": "2026-05-02", "status": "Received from shipper", "location": "Delhi (DEL)", "flight": "SQ403" },
+      { "date": "2026-05-03", "status": "Departed", "location": "Delhi (DEL)", "flight": "SQ403" },
+      { "date": "2026-05-03", "status": "Arrived at transit hub", "location": "Singapore (SIN)", "flight": "SQ403" },
+      { "date": "2026-05-04", "status": "Departed transit hub", "location": "Singapore (SIN)", "flight": "SQ217" },
+      { "date": "2026-05-05", "status": "Arrived at destination", "location": "Melbourne (MEL)", "flight": "SQ217" },
+      { "date": "2026-05-06", "status": "Customs clearance in progress", "location": "Melbourne (MEL)", "flight": "" },
+      { "date": "2026-05-07", "status": "Delivered to consignee", "location": "Melbourne (MEL)", "flight": "" }
+    ],
+    "routes": [
+      { "from": "DEL", "to": "SIN", "flight": "SQ403", "departure": "2026-05-03T01:30:00", "arrival": "2026-05-03T09:45:00" },
+      { "from": "SIN", "to": "MEL", "flight": "SQ217", "departure": "2026-05-04T07:00:00", "arrival": "2026-05-04T17:30:00" }
+    ]
   },
   {
     "awb": "729-94581793",
@@ -45,7 +130,26 @@
     "type": "Air 3RD",
     "forwarder": "DIVYA",
     "origin": "Delhi (DEL)",
-    "destination": "San Pedro Sula (SAP)"
+    "destination": "San Pedro Sula (SAP)",
+    "carrier": "KLM Royal Dutch Airlines",
+    "flightNo": "KL872",
+    "events": [
+      { "date": "2026-05-03", "status": "Shipment booked", "location": "Delhi (DEL)", "flight": "KL872" },
+      { "date": "2026-05-04", "status": "Received from shipper", "location": "Delhi (DEL)", "flight": "KL872" },
+      { "date": "2026-05-05", "status": "Departed", "location": "Delhi (DEL)", "flight": "KL872" },
+      { "date": "2026-05-05", "status": "Arrived at transit hub", "location": "Amsterdam (AMS)", "flight": "KL872" },
+      { "date": "2026-05-06", "status": "In transit - connecting flight", "location": "Amsterdam (AMS)", "flight": "KL757" },
+      { "date": "2026-05-07", "status": "Arrived at second transit", "location": "Panama City (PTY)", "flight": "KL757" },
+      { "date": "2026-05-08", "status": "Departed second transit", "location": "Panama City (PTY)", "flight": "CM412" },
+      { "date": "2026-05-08", "status": "Arrived at destination", "location": "San Pedro Sula (SAP)", "flight": "CM412" },
+      { "date": "2026-05-09", "status": "Customs clearance in progress", "location": "San Pedro Sula (SAP)", "flight": "" },
+      { "date": "2026-05-10", "status": "Delivered to consignee", "location": "San Pedro Sula (SAP)", "flight": "" }
+    ],
+    "routes": [
+      { "from": "DEL", "to": "AMS", "flight": "KL872", "departure": "2026-05-05T03:00:00", "arrival": "2026-05-05T09:00:00" },
+      { "from": "AMS", "to": "PTY", "flight": "KL757", "departure": "2026-05-06T10:30:00", "arrival": "2026-05-06T16:00:00" },
+      { "from": "PTY", "to": "SAP", "flight": "CM412", "departure": "2026-05-08T06:00:00", "arrival": "2026-05-08T08:30:00" }
+    ]
   },
   {
     "awb": "074-05164585",
@@ -53,6 +157,22 @@
     "type": "Air 3RD",
     "forwarder": "Unicargo",
     "origin": "Barcelona (BCN)",
-    "destination": "Cape Town (CPT)"
+    "destination": "Cape Town (CPT)",
+    "carrier": "Ethiopian Airlines",
+    "flightNo": "ET725",
+    "events": [
+      { "date": "2026-05-15", "status": "Shipment booked", "location": "Barcelona (BCN)", "flight": "ET725" },
+      { "date": "2026-05-16", "status": "Received from shipper", "location": "Barcelona (BCN)", "flight": "ET725" },
+      { "date": "2026-05-17", "status": "Departed", "location": "Barcelona (BCN)", "flight": "ET725" },
+      { "date": "2026-05-17", "status": "Arrived at transit hub", "location": "Addis Ababa (ADD)", "flight": "ET725" },
+      { "date": "2026-05-18", "status": "Departed transit hub", "location": "Addis Ababa (ADD)", "flight": "ET847" },
+      { "date": "2026-05-18", "status": "Arrived at destination", "location": "Cape Town (CPT)", "flight": "ET847" },
+      { "date": "2026-05-19", "status": "Customs clearance in progress", "location": "Cape Town (CPT)", "flight": "" },
+      { "date": "2026-05-20", "status": "Available for pickup", "location": "Cape Town (CPT)", "flight": "" }
+    ],
+    "routes": [
+      { "from": "BCN", "to": "ADD", "flight": "ET725", "departure": "2026-05-17T01:00:00", "arrival": "2026-05-17T09:30:00" },
+      { "from": "ADD", "to": "CPT", "flight": "ET847", "departure": "2026-05-18T06:00:00", "arrival": "2026-05-18T12:30:00" }
+    ]
   }
 ]

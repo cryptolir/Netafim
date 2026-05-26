@@ -204,27 +204,59 @@ router.get('/air/track/:awb', authenticateToken, async (req, res) => {
     const destCode = extractIATA(s.destination);
     const fromAirport = originCode ? (AIRPORT_COORDS[originCode] || { iata_code: originCode, name: s.origin, country: '', lat: null, lng: null }) : null;
     const toAirport = destCode ? (AIRPORT_COORDS[destCode] || { iata_code: destCode, name: s.destination, country: '', lat: null, lng: null }) : null;
+
+    // Determine status from events
+    let status = 'In Transit';
+    if (s.events && s.events.length > 0) {
+      const lastEvent = s.events[s.events.length - 1].status.toLowerCase();
+      if (lastEvent.includes('delivered') || lastEvent.includes('pickup')) status = 'Delivered';
+      else if (lastEvent.includes('customs')) status = 'In Customs';
+      else if (lastEvent.includes('arrived at destination')) status = 'Arrived';
+    }
+
+    // Build events array matching API format
+    const events = (s.events || []).map((e, i) => ({
+      order: i + 1,
+      date: e.date,
+      status: e.status,
+      location: e.location,
+      flight: e.flight || '',
+      is_estimated: false,
+    }));
+
+    // Build routes array matching API format
+    const routes = (s.routes || []).map((r, i) => ({
+      order: i + 1,
+      from: { iata_code: r.from, name: r.from },
+      to: { iata_code: r.to, name: r.to },
+      flight_number: r.flight,
+      departure: r.departure,
+      arrival: r.arrival,
+    }));
+
     return ({
     success: true,
     status_code: 'FALLBACK',
     isFallback: true,
     metadata: {
       request_parameters: { number: s.awb },
-      airline: {},
+      airline: { name: s.carrier || '', iata_code: '' },
       updated_at: new Date().toISOString(),
     },
     data: {
-      status: 'In Transit',
+      status: status,
       awb: s.awb,
       shipmentNo: s.shipmentNo,
       type: s.type,
       forwarder: s.forwarder,
+      carrier: s.carrier || '',
+      flightNo: s.flightNo || '',
       origin: s.origin || 'Tel Aviv (TLV)',
       destination: s.destination,
       from: fromAirport,
       to: toAirport,
-      routes: [],
-      events: [],
+      routes: routes,
+      events: events,
     },
   });
   };

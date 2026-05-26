@@ -340,12 +340,14 @@ router.get('/air/shipments', authenticateToken, (req, res) => {
  * Query params: origin, destination, from_date, weeks, cargo_type, direct_only
  */
 router.get('/schedules', authenticateToken, async (req, res) => {
-  const { origin, destination, from_date, weeks, cargo_type, direct_only } = req.query;
+  const { origin, destination, from_date, weeks, cargo_type, direct_only, sort, carriers } = req.query;
   try {
     const data = await getSchedules(origin, destination, from_date, {
       weeks: weeks ? parseInt(weeks) : 4,
       cargoType: cargo_type || 'GC',
-      directOnly: direct_only === 'true'
+      directOnly: direct_only === 'true',
+      sort: sort || 'DEP',
+      carriers: carriers || undefined
     });
     return res.json(data);
   } catch (err) {

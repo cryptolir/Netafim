@@ -456,57 +456,180 @@ function TrackingResult({ data, docsData, docsLoading, token }) {
 
 // ── Ship Schedules Result ──────────────────────────────────────────────────
 function SchedulesResult({ data }) {
+  const [expandedIdx, setExpandedIdx] = React.useState(null);
   if (!data) return null;
   const schedules = data.data?.schedules || data.schedules || [];
+  const stats = data.metadata?.response_stats || [];
   if (schedules.length === 0) {
     return <div className="empty-state"><div className="empty-icon">🔍</div><p>No schedules found for this route.</p></div>;
   }
 
+  const toggleExpand = (idx) => setExpandedIdx(expandedIdx === idx ? null : idx);
+
   return (
-    <div className="schedules-table-wrap">
-      <table className="schedules-table">
-        <thead>
-          <tr>
-            <th>Carrier</th>
-            <th>Departure</th>
-            <th>Arrival</th>
-            <th>Transit</th>
-            <th>Route</th>
-            <th>Service</th>
-          </tr>
-        </thead>
-        <tbody>
-          {schedules.map((s, i) => {
-            const firstLeg = s.legs?.[0] || {};
-            const lastLeg = s.legs?.[s.legs.length - 1] || {};
-            return (
-              <tr key={i}>
-                <td>
-                  <span className="carrier-badge">🚢 {s.carrier_name || s.carrier_scac}</span>
-                </td>
-                <td>
-                  <div style={{ fontWeight: 600 }}>{formatDate(s.origin?.estimated_date || firstLeg.departure?.estimated_date)}</div>
-                  <div style={{ fontSize: 11, color: 'var(--gray-400)' }}>{s.origin?.port_name}</div>
-                </td>
-                <td>
-                  <div style={{ fontWeight: 600 }}>{formatDate(s.destination?.estimated_date || lastLeg.arrival?.estimated_date)}</div>
-                  <div style={{ fontSize: 11, color: 'var(--gray-400)' }}>{s.destination?.port_name}</div>
-                </td>
-                <td><span className="transit-time">{s.transit_time}d</span></td>
-                <td>
-                  {s.direct
-                    ? <span className="direct-badge">Direct</span>
-                    : <span className="via-badge">{s.legs?.length} leg{s.legs?.length > 1 ? 's' : ''}</span>
-                  }
-                </td>
-                <td style={{ fontSize: 12, color: 'var(--gray-500)' }}>
-                  {firstLeg.service_name || '—'}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <div className="schedules-results-wrap">
+      {/* Stats summary */}
+      {stats.length > 0 && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+          {stats.map((st, i) => (
+            <span key={i} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: st.found_schedules > 0 ? '#dcfce7' : '#fef2f2', color: st.found_schedules > 0 ? '#166534' : '#991b1b', fontWeight: 600 }}>
+              {st.carrier_name}: {st.found_schedules} schedule{st.found_schedules !== 1 ? 's' : ''}
+            </span>
+          ))}
+          <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: '#eff6ff', color: '#1d4ed8', fontWeight: 600 }}>
+            Total: {schedules.length} results
+          </span>
+        </div>
+      )}
+
+      {/* Schedule cards */}
+      {schedules.map((s, i) => {
+        const firstLeg = s.legs?.[0] || {};
+        const lastLeg = s.legs?.[s.legs.length - 1] || {};
+        const isExpanded = expandedIdx === i;
+        return (
+          <div key={i} className="schedule-card" style={{ border: '1px solid #e2e8f0', borderRadius: 8, marginBottom: 10, overflow: 'hidden', cursor: 'pointer', background: isExpanded ? '#f8fafc' : '#fff', transition: 'all 0.2s' }} onClick={() => toggleExpand(i)}>
+            {/* Summary row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.5fr 1.5fr 0.7fr 0.8fr 0.5fr', alignItems: 'center', padding: '12px 16px', gap: 8 }}>
+              <div>
+                <span style={{ fontWeight: 700, fontSize: 13, color: '#1e3a5f' }}>🚢 {s.carrier_name || s.carrier_scac}</span>
+                <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{s.carrier_scac}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Departure</div>
+                <div style={{ fontWeight: 600, fontSize: 13 }}>{formatDate(s.origin?.estimated_date || firstLeg.departure?.estimated_date)}</div>
+                <div style={{ fontSize: 11, color: '#64748b' }}>{s.origin?.port_name} ({s.origin?.port_locode})</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Arrival</div>
+                <div style={{ fontWeight: 600, fontSize: 13 }}>{formatDate(s.destination?.estimated_date || lastLeg.arrival?.estimated_date)}</div>
+                <div style={{ fontSize: 11, color: '#64748b' }}>{s.destination?.port_name} ({s.destination?.port_locode})</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontWeight: 700, fontSize: 16, color: '#1e3a5f' }}>{s.transit_time}d</div>
+                <div style={{ fontSize: 10, color: '#94a3b8' }}>transit</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                {s.direct
+                  ? <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 12, background: '#dcfce7', color: '#166534', fontWeight: 600 }}>Direct</span>
+                  : <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 12, background: '#fef3c7', color: '#92400e', fontWeight: 600 }}>{s.legs?.length} legs</span>
+                }
+              </div>
+              <div style={{ textAlign: 'center', fontSize: 18, color: '#94a3b8' }}>
+                {isExpanded ? '▲' : '▼'}
+              </div>
+            </div>
+
+            {/* Expanded details */}
+            {isExpanded && (
+              <div style={{ borderTop: '1px solid #e2e8f0', padding: '16px', background: '#f8fafc' }} onClick={e => e.stopPropagation()}>
+                {/* Route visual */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Route Details</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 0, overflowX: 'auto', padding: '8px 0' }}>
+                    {(s.legs || []).map((leg, li) => (
+                      <React.Fragment key={li}>
+                        {li === 0 && (
+                          <div style={{ textAlign: 'center', minWidth: 80 }}>
+                            <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#2563eb', margin: '0 auto 4px' }} />
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#1e3a5f' }}>{leg.departure?.port_locode}</div>
+                            <div style={{ fontSize: 10, color: '#64748b' }}>{leg.departure?.port_name}</div>
+                            <div style={{ fontSize: 10, color: '#2563eb' }}>{formatDate(leg.departure?.estimated_date)}</div>
+                          </div>
+                        )}
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 100 }}>
+                          <div style={{ fontSize: 10, color: '#64748b', marginBottom: 2 }}>{leg.vessel_name}</div>
+                          <div style={{ width: '100%', height: 2, background: '#2563eb', position: 'relative' }}>
+                            <span style={{ position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%)', fontSize: 10 }}>🚢</span>
+                          </div>
+                          <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 2 }}>{leg.service_name || ''} {leg.voyages?.[0]?.voyage ? `(${leg.voyages[0].voyage})` : ''}</div>
+                        </div>
+                        <div style={{ textAlign: 'center', minWidth: 80 }}>
+                          <div style={{ width: 14, height: 14, borderRadius: '50%', background: li === (s.legs || []).length - 1 ? '#16a34a' : '#f59e0b', margin: '0 auto 4px' }} />
+                          <div style={{ fontSize: 11, fontWeight: 700, color: '#1e3a5f' }}>{leg.arrival?.port_locode}</div>
+                          <div style={{ fontSize: 10, color: '#64748b' }}>{leg.arrival?.port_name}</div>
+                          <div style={{ fontSize: 10, color: li === (s.legs || []).length - 1 ? '#16a34a' : '#d97706' }}>{formatDate(leg.arrival?.estimated_date)}</div>
+                        </div>
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Legs table */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Vessel Legs</div>
+                  <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: '#f1f5f9' }}>
+                        <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 600, color: '#475569' }}>Leg</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 600, color: '#475569' }}>Vessel</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 600, color: '#475569' }}>Voyage</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 600, color: '#475569' }}>From</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 600, color: '#475569' }}>ETD</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 600, color: '#475569' }}>To</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 600, color: '#475569' }}>ETA</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 600, color: '#475569' }}>Service</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(s.legs || []).map((leg, li) => (
+                        <tr key={li} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '6px 8px', fontWeight: 600 }}>{leg.order_id || li + 1}</td>
+                          <td style={{ padding: '6px 8px', fontWeight: 600, color: '#1e3a5f' }}>{leg.vessel_name || '—'}</td>
+                          <td style={{ padding: '6px 8px', fontFamily: 'monospace', fontSize: 11 }}>{leg.voyages?.[0]?.voyage || '—'}</td>
+                          <td style={{ padding: '6px 8px' }}>
+                            <div style={{ fontWeight: 500 }}>{leg.departure?.port_name}</div>
+                            <div style={{ fontSize: 10, color: '#94a3b8' }}>{leg.departure?.terminal_name?.substring(0, 30)}{leg.departure?.terminal_name?.length > 30 ? '...' : ''}</div>
+                          </td>
+                          <td style={{ padding: '6px 8px', color: '#2563eb', fontWeight: 500 }}>{formatDate(leg.departure?.estimated_date)}</td>
+                          <td style={{ padding: '6px 8px' }}>
+                            <div style={{ fontWeight: 500 }}>{leg.arrival?.port_name}</div>
+                            <div style={{ fontSize: 10, color: '#94a3b8' }}>{leg.arrival?.terminal_name?.substring(0, 30)}{leg.arrival?.terminal_name?.length > 30 ? '...' : ''}</div>
+                          </td>
+                          <td style={{ padding: '6px 8px', color: '#16a34a', fontWeight: 500 }}>{formatDate(leg.arrival?.estimated_date)}</td>
+                          <td style={{ padding: '6px 8px', fontSize: 11, color: '#64748b' }}>{leg.service_name || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Terminal info */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                  <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 6, padding: 10 }}>
+                    <div style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 4 }}>Origin Terminal</div>
+                    <div style={{ fontSize: 12, fontWeight: 500, color: '#1e3a5f' }}>{s.origin?.terminal_name || firstLeg.departure?.terminal_name || 'N/A'}</div>
+                  </div>
+                  <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 6, padding: 10 }}>
+                    <div style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 4 }}>Destination Terminal</div>
+                    <div style={{ fontSize: 12, fontWeight: 500, color: '#1e3a5f' }}>{s.destination?.terminal_name || lastLeg.arrival?.terminal_name || 'N/A'}</div>
+                  </div>
+                </div>
+
+                {/* Cut-off dates */}
+                {s.cut_off_dates && s.cut_off_dates.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Cut-off Dates</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {s.cut_off_dates.map((co, ci) => (
+                        <div key={ci} style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 6, padding: '4px 10px', fontSize: 11 }}>
+                          <span style={{ fontWeight: 600, color: '#92400e' }}>{co.name}:</span>{' '}
+                          <span style={{ color: '#78350f' }}>{formatDate(co.date)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Updated info */}
+                {s.updated_at && (
+                  <div style={{ marginTop: 12, fontSize: 10, color: '#94a3b8', textAlign: 'right' }}>Last updated: {s.updated_at}</div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

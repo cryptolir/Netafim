@@ -68,7 +68,6 @@ async function trackAirShipment(awb) {
 async function getSchedules(origin, destination, fromDate, options = {}) {
   const today = new Date().toISOString().split('T')[0];
   const params = {
-    api_key: SEARATES_API_KEY,
     origin: (origin || 'ILASH').toUpperCase(),
     destination: (destination || 'DEHAM').toUpperCase(),
     from_date: fromDate || today,
@@ -79,8 +78,16 @@ async function getSchedules(origin, destination, fromDate, options = {}) {
     multimodal: true
   };
 
+  if (options.carriers) {
+    params.carriers = options.carriers;
+  }
+
   const response = await axios.get(SCHEDULES_ENDPOINT, {
     params,
+    headers: {
+      'X-API-KEY': SEARATES_API_KEY,
+      'Content-Type': 'application/json'
+    },
     timeout: 30000
   });
   return response.data;
@@ -97,7 +104,6 @@ async function getSchedules(origin, destination, fromDate, options = {}) {
 async function getFlightSchedules(origin, destination, departureDate, options = {}) {
   const today = new Date().toISOString().split('T')[0];
   const params = {
-    api_key: SEARATES_API_KEY,
     origin_airport_code: (origin || 'TLV').toUpperCase(),
     destination_airport_code: (destination || 'CDG').toUpperCase(),
     departure_date: departureDate || today,
@@ -110,6 +116,10 @@ async function getFlightSchedules(origin, destination, departureDate, options = 
 
   const response = await axios.get(FLIGHT_SCHEDULES_ENDPOINT, {
     params,
+    headers: {
+      'X-API-KEY': SEARATES_API_KEY,
+      'Content-Type': 'application/json'
+    },
     timeout: 30000
   });
   return response.data;

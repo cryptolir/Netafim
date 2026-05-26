@@ -2,53 +2,24 @@ import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../contexts/AuthContext';
 
-// ── Static container registry from shipment files ─────────────────────────
-const SEA_CONTAINERS = [
-  { containerNo: 'ZCSU7221847', shipmentNo: '3007283', forwarder: 'BDL',       scac: 'ZIMU', mbl: 'ZIMUMER25802993' },
-  { containerNo: 'BMOU6008700', shipmentNo: '3007304', forwarder: 'BDL',       scac: 'MEDU', mbl: 'MEDUXK674836' },
-  { containerNo: 'CAIU7795981', shipmentNo: '3007344', forwarder: 'BDL',       scac: 'MEDU', mbl: 'MEDUXK687986' },
-  { containerNo: 'TRHU7345364', shipmentNo: '2033991', forwarder: 'Rosenthal', scac: 'MEDU', mbl: 'MEDUKM036373' },
-  { containerNo: 'MSCU5426470', shipmentNo: '2033991', forwarder: 'Rosenthal', scac: 'MEDU', mbl: 'MEDUKM036373' },
-  { containerNo: 'MEDU8765745', shipmentNo: '2034060', forwarder: 'Rosenthal', scac: 'MEDU', mbl: 'MEDUKM045440' },
-  { containerNo: 'MSNU5191379', shipmentNo: '2034062', forwarder: 'Rosenthal', scac: 'MEDU', mbl: 'MEDUKM045788' },
-  { containerNo: 'TRLU7537616', shipmentNo: '3007325', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '265573092' },
-  { containerNo: 'MRKU2456776', shipmentNo: '3007325', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '265573092' },
-  { containerNo: 'MIEU2031241', shipmentNo: '3007325', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '265573092' },
-  { containerNo: 'MRKU2810811', shipmentNo: '3007325', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '265573092' },
-  { containerNo: 'MRSU7660635', shipmentNo: '3007333', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '265555402' },
-  { containerNo: 'MSKU1569471', shipmentNo: '3007333', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '265555402' },
-  { containerNo: 'MSKU0761303', shipmentNo: '3007333', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '265555402' },
-  { containerNo: 'MRSU5717201', shipmentNo: '3007333', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '265555402' },
-  { containerNo: 'CSLU2384211', shipmentNo: '3007315', forwarder: 'UNICARGO',  scac: 'COSU', mbl: '6443358570' },
-  { containerNo: 'MSKU1708833', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'HASU4794517', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'MRSU5655394', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'CAAU8976390', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'CAAU7757551', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'MRKU4153130', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'MRKU4474043', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'CAIU4649303', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'MRSU5022020', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'MRSU7535058', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'TRHU7289276', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'MRKU3855934', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'MRKU6142095', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'GAOU7139684', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'SUDU5985228', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'UETU6940030', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'HASU4593976', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'MRSU6504828', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'TGHU6962586', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'TCLU8372569', shipmentNo: '3007302', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: '263497067' },
-  { containerNo: 'TGBU6980952', shipmentNo: '3007335', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: 'ANT1975091' },
-  { containerNo: 'TXGU8820344', shipmentNo: '3007335', forwarder: 'UNICARGO',  scac: 'MAEU', mbl: 'ANT1975091' },
-  { containerNo: 'ONEU2961683', shipmentNo: '3007319', forwarder: 'UNICARGO',  scac: 'ONEY', mbl: 'MERG00219900' },
-  { containerNo: 'TCKU7713880', shipmentNo: '2033947', forwarder: 'GOA',       scac: 'MAEU', mbl: '264232297' },
-  { containerNo: 'FFAU1436408', shipmentNo: '3007313', forwarder: 'GOA',       scac: 'ONEY', mbl: 'ONEYHAMG01212900' },
-  { containerNo: 'TEMU8855116', shipmentNo: '2034010', forwarder: 'GOA',       scac: 'MAEU', mbl: '265804079' },
-  { containerNo: 'ESDU7003087', shipmentNo: '3007294', forwarder: 'GOA',       scac: 'ESPU', mbl: 'ESLTURCDI0002100' },
-  { containerNo: 'GAOU7866580', shipmentNo: '2033944', forwarder: 'GOA',       scac: 'MAEU', mbl: '264232297' },
-  { containerNo: 'UETU8152824', shipmentNo: '2033947', forwarder: 'GOA',       scac: 'MAEU', mbl: '264232297' },
+// ── Static shipment registry grouped by MBL ─────────────────────────────
+const SEA_SHIPMENTS = [
+  { mbl: 'ZIMUMER25802993', shipmentNo: '3007283', forwarder: 'BDL', scac: 'ZIMU', containers: ['ZCSU7221847'] },
+  { mbl: 'MEDUXK674836', shipmentNo: '3007304', forwarder: 'BDL', scac: 'MEDU', containers: ['BMOU6008700'] },
+  { mbl: 'MEDUXK687986', shipmentNo: '3007344', forwarder: 'BDL', scac: 'MEDU', containers: ['CAIU7795981'] },
+  { mbl: 'MEDUKM036373', shipmentNo: '2033991', forwarder: 'Rosenthal', scac: 'MEDU', containers: ['TRHU7345364', 'MSCU5426470'] },
+  { mbl: 'MEDUKM045440', shipmentNo: '2034060', forwarder: 'Rosenthal', scac: 'MEDU', containers: ['MEDU8765745'] },
+  { mbl: 'MEDUKM045788', shipmentNo: '2034062', forwarder: 'Rosenthal', scac: 'MEDU', containers: ['MSNU5191379'] },
+  { mbl: '265573092', shipmentNo: '3007325', forwarder: 'UNICARGO', scac: 'MAEU', containers: ['TRLU7537616', 'MRKU2456776', 'MIEU2031241', 'MRKU2810811'] },
+  { mbl: '265555402', shipmentNo: '3007333', forwarder: 'UNICARGO', scac: 'MAEU', containers: ['MRSU7660635', 'MSKU1569471', 'MSKU0761303', 'MRSU5717201'] },
+  { mbl: '6443358570', shipmentNo: '3007315', forwarder: 'UNICARGO', scac: 'COSU', containers: ['CSLU2384211'] },
+  { mbl: '263497067', shipmentNo: '3007302', forwarder: 'UNICARGO', scac: 'MAEU', containers: ['MSKU1708833', 'HASU4794517', 'MRSU5655394', 'CAAU8976390', 'CAAU7757551', 'MRKU4153130', 'MRKU4474043', 'CAIU4649303', 'MRSU5022020', 'MRSU7535058', 'TRHU7289276', 'MRKU3855934', 'MRKU6142095', 'GAOU7139684', 'SUDU5985228', 'UETU6940030', 'HASU4593976', 'MRSU6504828', 'TGHU6962586', 'TCLU8372569'] },
+  { mbl: 'ANT1975091', shipmentNo: '3007335', forwarder: 'UNICARGO', scac: 'MAEU', containers: ['TGBU6980952', 'TXGU8820344'] },
+  { mbl: 'MERG00219900', shipmentNo: '3007319', forwarder: 'UNICARGO', scac: 'ONEY', containers: ['ONEU2961683'] },
+  { mbl: '264232297', shipmentNo: '2033947', forwarder: 'GOA', scac: 'MAEU', containers: ['TCKU7713880', 'GAOU7866580', 'UETU8152824'] },
+  { mbl: 'ONEYHAMG01212900', shipmentNo: '3007313', forwarder: 'GOA', scac: 'ONEY', containers: ['FFAU1436408'] },
+  { mbl: '265804079', shipmentNo: '2034010', forwarder: 'GOA', scac: 'MAEU', containers: ['TEMU8855116'] },
+  { mbl: 'ESLTURCDI0002100', shipmentNo: '3007294', forwarder: 'GOA', scac: 'ESPU', containers: ['ESDU7003087'] },
 ];
 
 const SCAC_NAMES = {
@@ -74,23 +45,23 @@ function formatDate(d) {
 
 export default function AllContainersList() {
   const { token } = useContext(AuthContext);
-  const [popup, setPopup]   = useState(null);   // { container, data } | null
-  const [loading, setLoading] = useState(null);  // containerNo being loaded
+  const [popup, setPopup]   = useState(null);
+  const [loading, setLoading] = useState(null);
   const [error, setError]   = useState(null);
 
-  const openStatus = async (c) => {
-    setLoading(c.containerNo);
+  const openStatus = async (shipment) => {
+    setLoading(shipment.mbl);
     setError(null);
     setPopup(null);
     try {
       const res = await axios.get(
-        `/api/containers/track/${encodeURIComponent(c.containerNo)}`,
+        `/api/containers/track/${encodeURIComponent(shipment.mbl)}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = res.data.data || res.data;
-      setPopup({ container: c, data });
+      setPopup({ shipment, data });
     } catch (err) {
-      setError(c.containerNo);
+      setError(shipment.mbl);
     } finally {
       setLoading(null);
     }
@@ -98,7 +69,6 @@ export default function AllContainersList() {
 
   const closePopup = () => setPopup(null);
 
-  // Extract latest event from tracking data
   const getLatestEvent = (data) => {
     const containers = data?.containers || [];
     const events = (containers[0]?.events || []).filter(e => e.actual);
@@ -131,31 +101,33 @@ export default function AllContainersList() {
     return withVessel[0].vessel?.name;
   };
 
+  const totalContainers = SEA_SHIPMENTS.reduce((sum, s) => sum + s.containers.length, 0);
+
   return (
     <>
       <div className="section-card acl-card">
         <div className="section-header">
           <div className="section-icon">📦</div>
           <div>
-            <div className="section-title">All Containers</div>
-            <div className="section-subtitle">{SEA_CONTAINERS.length} sea containers — click for latest status</div>
+            <div className="section-title">All Shipments</div>
+            <div className="section-subtitle">{SEA_SHIPMENTS.length} shipments ({totalContainers} containers) — click for latest status</div>
           </div>
         </div>
         <div className="section-body acl-body">
-          {SEA_CONTAINERS.map(c => {
-            const isLoading = loading === c.containerNo;
-            const isError   = error === c.containerNo;
+          {SEA_SHIPMENTS.map(s => {
+            const isLoading = loading === s.mbl;
+            const isError   = error === s.mbl;
             return (
               <button
-                key={c.containerNo}
+                key={s.mbl}
                 className={`acl-row${isLoading ? ' acl-row--loading' : ''}${isError ? ' acl-row--error' : ''}`}
-                onClick={() => openStatus(c)}
+                onClick={() => openStatus(s)}
                 disabled={!!loading}
               >
                 <span className="acl-icon">🚢</span>
                 <span className="acl-main">
-                  <span className="acl-container">{c.containerNo}</span>
-                  <span className="acl-meta">{c.shipmentNo} · {SCAC_NAMES[c.scac] || c.scac} · {c.forwarder}</span>
+                  <span className="acl-container">{s.mbl}</span>
+                  <span className="acl-meta">{s.shipmentNo} · {SCAC_NAMES[s.scac] || s.scac} · {s.forwarder} · {s.containers.length} cntr{s.containers.length > 1 ? 's' : ''}</span>
                 </span>
                 {isLoading
                   ? <span className="acl-spinner">⏳</span>
@@ -171,7 +143,7 @@ export default function AllContainersList() {
 
       {/* ── Status Popup ─────────────────────────────────────────────────── */}
       {popup && (() => {
-        const { container, data } = popup;
+        const { shipment, data } = popup;
         const latestEvent = getLatestEvent(data);
         const { pol, pod, eta } = getRoute(data);
         const status = getStatus(data);
@@ -189,11 +161,11 @@ export default function AllContainersList() {
               <div className="acl-popup-header">
                 <div>
                   <div className="acl-popup-title">
-                    🚢 {container.containerNo}
+                    🚢 {shipment.mbl}
                     {badge && <span className={`acl-popup-badge ${badge.cls}`}>{badge.label}</span>}
                   </div>
                   <div className="acl-popup-sub">
-                    Shipment {container.shipmentNo} · {SCAC_NAMES[container.scac] || container.scac} · {container.forwarder}
+                    Shipment {shipment.shipmentNo} · {SCAC_NAMES[shipment.scac] || shipment.scac} · {shipment.forwarder}
                   </div>
                 </div>
                 <button className="acl-popup-close" onClick={closePopup}>✕</button>
@@ -233,6 +205,16 @@ export default function AllContainersList() {
                 </div>
               )}
 
+              {/* Containers list */}
+              <div className="acl-containers-list">
+                <div className="acl-events-title">Containers ({shipment.containers.length})</div>
+                <div className="acl-containers-grid">
+                  {shipment.containers.map(c => (
+                    <span key={c} className="acl-container-chip">{c}</span>
+                  ))}
+                </div>
+              </div>
+
               {/* Recent events */}
               {allEvents.length > 0 && (
                 <div className="acl-events">
@@ -251,9 +233,9 @@ export default function AllContainersList() {
                 </div>
               )}
 
-              {/* MBL */}
+              {/* Footer */}
               <div className="acl-popup-footer">
-                MBL: <strong>{container.mbl}</strong>
+                MBL: <strong>{shipment.mbl}</strong> · Shipment: <strong>{shipment.shipmentNo}</strong>
               </div>
             </div>
           </div>

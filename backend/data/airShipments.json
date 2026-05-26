@@ -5,25 +5,64 @@
     "type": "Air Export",
     "forwarder": "FC",
     "origin": "Tel Aviv (TLV)",
-    "destination": "Jakarta (CGK)",
-    "carrier": "El Al Israel Airlines",
-    "flightNo": "LY315",
+    "destination": "Liège (LGG)",
+    "carrier": "CAL Cargo Airlines",
+    "carrierCode": "ICL",
+    "flightNo": "ICL601",
+    "pieces": "75",
+    "weight": "6676",
+    "flights": [
+      {
+        "from": "TLV",
+        "to": "LGG",
+        "flight": "ICL605",
+        "etd": "2026-03-23T11:03:00",
+        "eta": "2026-03-23T14:20:00",
+        "atd": "2026-03-23T11:03:00",
+        "ata": "2026-03-23T14:20:00",
+        "pieces": "7/75",
+        "weight": "1137",
+        "status": ["Booked", "Received", "Departed", "Arrived"]
+      },
+      {
+        "from": "TLV",
+        "to": "LGG",
+        "flight": "ICL909",
+        "etd": "2026-03-24T21:16:00",
+        "eta": "2026-03-25T00:19:00",
+        "atd": "2026-03-24T21:16:00",
+        "ata": "2026-03-25T00:19:00",
+        "pieces": "6/75",
+        "weight": "452",
+        "status": ["Booked", "Received", "Departed"]
+      },
+      {
+        "from": "TLV",
+        "to": "LGG",
+        "flight": "ICL601",
+        "etd": "2026-03-26T19:34:00",
+        "eta": "2026-03-26T22:56:00",
+        "atd": "2026-03-26T19:34:00",
+        "ata": "2026-03-26T22:56:00",
+        "pieces": "62/75",
+        "weight": "5087",
+        "status": ["Booked"]
+      }
+    ],
     "events": [
-      { "date": "2026-05-10", "status": "Shipment booked", "location": "Tel Aviv (TLV)", "flight": "LY315" },
-      { "date": "2026-05-11", "status": "Received from shipper", "location": "Tel Aviv (TLV)", "flight": "LY315" },
-      { "date": "2026-05-11", "status": "Accepted by carrier", "location": "Tel Aviv (TLV)", "flight": "LY315" },
-      { "date": "2026-05-12", "status": "Departed", "location": "Tel Aviv (TLV)", "flight": "LY315" },
-      { "date": "2026-05-12", "status": "Arrived at transit hub", "location": "Singapore (SIN)", "flight": "LY315" },
-      { "date": "2026-05-13", "status": "In transit - customs clearance", "location": "Singapore (SIN)", "flight": "SQ952" },
-      { "date": "2026-05-14", "status": "Departed transit hub", "location": "Singapore (SIN)", "flight": "SQ952" },
-      { "date": "2026-05-14", "status": "Arrived at destination", "location": "Jakarta (CGK)", "flight": "SQ952" },
-      { "date": "2026-05-15", "status": "Customs clearance in progress", "location": "Jakarta (CGK)", "flight": "" },
-      { "date": "2026-05-16", "status": "Released by customs", "location": "Jakarta (CGK)", "flight": "" },
-      { "date": "2026-05-16", "status": "Available for pickup", "location": "Jakarta (CGK)", "flight": "" }
+      { "date": "2026-03-23", "status": "Shipment booked", "location": "Tel Aviv (TLV)", "flight": "ICL605" },
+      { "date": "2026-03-23", "status": "Received from shipper", "location": "Tel Aviv (TLV)", "flight": "ICL605" },
+      { "date": "2026-03-23", "status": "Departed", "location": "Tel Aviv (TLV)", "flight": "ICL605" },
+      { "date": "2026-03-23", "status": "Arrived", "location": "Liège (LGG)", "flight": "ICL605" },
+      { "date": "2026-03-24", "status": "Shipment booked", "location": "Tel Aviv (TLV)", "flight": "ICL909" },
+      { "date": "2026-03-24", "status": "Received from shipper", "location": "Tel Aviv (TLV)", "flight": "ICL909" },
+      { "date": "2026-03-24", "status": "Departed", "location": "Tel Aviv (TLV)", "flight": "ICL909" },
+      { "date": "2026-03-26", "status": "Shipment booked", "location": "Tel Aviv (TLV)", "flight": "ICL601" }
     ],
     "routes": [
-      { "from": "TLV", "to": "SIN", "flight": "LY315", "departure": "2026-05-12T06:30:00", "arrival": "2026-05-12T23:45:00" },
-      { "from": "SIN", "to": "CGK", "flight": "SQ952", "departure": "2026-05-14T08:15:00", "arrival": "2026-05-14T09:30:00" }
+      { "from": "TLV", "to": "LGG", "flight": "ICL605", "departure": "2026-03-23T11:03:00", "arrival": "2026-03-23T14:20:00" },
+      { "from": "TLV", "to": "LGG", "flight": "ICL909", "departure": "2026-03-24T21:16:00", "arrival": "2026-03-25T00:19:00" },
+      { "from": "TLV", "to": "LGG", "flight": "ICL601", "departure": "2026-03-26T19:34:00", "arrival": "2026-03-26T22:56:00" }
     ]
   },
   {

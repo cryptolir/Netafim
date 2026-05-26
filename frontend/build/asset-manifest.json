@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/static/css/main.b69c72ff.css",
-    "main.js": "/static/js/main.779d3aa5.js",
+    "main.js": "/static/js/main.a753e859.js",
     "static/media/netafim-logo.png": "/static/media/netafim-logo.c4c8a558b517a07f3d19.png",
     "index.html": "/index.html",
     "main.b69c72ff.css.map": "/static/css/main.b69c72ff.css.map",
-    "main.779d3aa5.js.map": "/static/js/main.779d3aa5.js.map"
+    "main.a753e859.js.map": "/static/js/main.a753e859.js.map"
   },
   "entrypoints": [
     "static/css/main.b69c72ff.css",
-    "static/js/main.779d3aa5.js"
+    "static/js/main.a753e859.js"
   ]
 }

@@ -271,12 +271,43 @@ router.get('/air/track/:awb', authenticateToken, async (req, res) => {
     );
   };
 
+  // Helper: try multiple AWB formats with the API
+  // IATA AWBs are formatted as "prefix-number" (e.g. 700-51280213)
+  // Users often type without dash (70051280213), so we try both formats
+  const tryApiFormats = async (rawAwb) => {
+    const cleaned = rawAwb.replace(/[\s-]/g, '');
+    const formats = [rawAwb.trim()]; // try original first
+    // If no dash present and length >= 10, try inserting dash after first 3 digits (IATA prefix)
+    if (!rawAwb.includes('-') && cleaned.length >= 10) {
+      formats.push(cleaned.slice(0, 3) + '-' + cleaned.slice(3));
+    }
+    // If dash present, also try without dash
+    if (rawAwb.includes('-')) {
+      formats.push(cleaned);
+    }
+    for (const fmt of formats) {
+      try {
+        const data = await trackAirShipment(fmt);
+        if (data && data.success) return data;
+        // If WRONG_NUMBER, try next format
+        if (data && !data.success && ['WRONG_NUMBER', 'NO_DATA', 'NOT_FOUND'].includes(data.status_code)) continue;
+        // API key issues — stop trying
+        if (data && !data.success && ['API_KEY_LIMIT_REACHED', 'API_KEY_ACCESS_DENIED', 'API_KEY_WRONG'].includes(data.status_code)) return data;
+        return data;
+      } catch (err) {
+        // Network error on this format — try next
+        continue;
+      }
+    }
+    return null; // all formats failed
+  };
+
   try {
-    const data = await trackAirShipment(awb);
+    const data = await tryApiFormats(awb);
 
     // API is down / key issues — fall back to local file
-    const isApiDown = !data || !data.success &&
-      ['API_KEY_LIMIT_REACHED', 'API_KEY_ACCESS_DENIED', 'API_KEY_WRONG'].includes(data.status_code);
+    const isApiDown = !data || (!data.success &&
+      ['API_KEY_LIMIT_REACHED', 'API_KEY_ACCESS_DENIED', 'API_KEY_WRONG'].includes(data.status_code));
 
     if (isApiDown) {
       const match = findLocalMatch();
@@ -297,10 +328,12 @@ router.get('/air/track/:awb', authenticateToken, async (req, res) => {
     if (data && data.success) {
       const match = findLocalMatch();
       if (match) {
-        // Attach MIND metadata (shipmentNo, forwarder) to the API response
+        // Attach MIND metadata (shipmentNo, forwarder, type) to the API response
         if (data.data) {
           data.data.mindShipmentNo = match.shipmentNo;
           data.data.mindForwarder = match.forwarder;
+          data.data.mindType = match.type;
+          data.data.mindCarrierCode = match.carrierCode;
         }
       }
     }

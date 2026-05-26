@@ -646,17 +646,62 @@ function AirTrackingResult({ data, docsData, docsLoading, token }) {
   const isFallback = data.isFallback === true;
   const hasDocs = docsData && docsData.docs && docsData.docs.length > 0;
 
-  // Build unique station list from routes (all legs: from → to)
+  // Build unique station list from routes — deduplicate by IATA code
   const buildStations = () => {
     if (!routes.length) return [];
-    const stations = [];
+    const stationMap = new Map(); // iata_code → station data
     routes.forEach((leg, i) => {
-      if (i === 0 && leg.from) stations.push({ airport: leg.from, dep: leg.departure_datetime_local, isOrigin: true });
-      if (leg.to) stations.push({ airport: leg.to, arr: leg.arrival_datetime_local, dep: routes[i+1]?.departure_datetime_local, flightIn: leg.flight_number, statusIn: leg.status, isDestination: i === routes.length - 1 });
+      const fromCode = leg.from?.iata_code || 'FROM_' + i;
+      const toCode = leg.to?.iata_code || 'TO_' + i;
+      if (!stationMap.has(fromCode)) {
+        stationMap.set(fromCode, {
+          airport: leg.from,
+          dep: leg.departure_datetime_local,
+          isOrigin: true,
+          flights: [],
+        });
+      }
+      if (!stationMap.has(toCode)) {
+        stationMap.set(toCode, {
+          airport: leg.to,
+          arr: leg.arrival_datetime_local,
+          flights: [leg.flight_number],
+          isDestination: false,
+        });
+      } else {
+        // Update arrival if later
+        const existing = stationMap.get(toCode);
+        const existingArr = existing.arr?.actual || existing.arr?.estimated || '';
+        const newArr = leg.arrival_datetime_local?.actual || leg.arrival_datetime_local?.estimated || '';
+        if (newArr > existingArr) existing.arr = leg.arrival_datetime_local;
+        if (leg.flight_number && !existing.flights?.includes(leg.flight_number)) {
+          existing.flights = existing.flights || [];
+          existing.flights.push(leg.flight_number);
+        }
+      }
     });
-    return stations;
+    // Mark last station as destination
+    const stationsArr = Array.from(stationMap.values());
+    if (stationsArr.length > 1) {
+      stationsArr[stationsArr.length - 1].isDestination = true;
+      // Remove isOrigin from non-first stations
+      stationsArr.forEach((s, i) => { if (i > 0) s.isOrigin = false; });
+    }
+    return stationsArr;
   };
   const stations = buildStations();
+
+  // Format datetime from API format "2026-03-23 11:03:00" or datetime_local object
+  const fmtDateTime = (dtObj) => {
+    if (!dtObj) return '—';
+    const val = dtObj.actual || dtObj.estimated || dtObj;
+    if (typeof val !== 'string') return '—';
+    try {
+      const d = new Date(val.replace(' ', 'T'));
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' +
+             d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    } catch { return val; }
+  };
 
   const [previewDoc, setPreviewDoc] = React.useState(null);
   const [previewLoading, setPreviewLoading] = React.useState(false);
@@ -881,45 +926,39 @@ function AirTrackingResult({ data, docsData, docsLoading, token }) {
         }}>{status.replace(/_/g, ' ')}</span>
       </div>
 
-      {/* Multi-stop route visual: all stations */}
+      {/* Route visual: unique stations */}
       {stations.length > 0 ? (
         <div style={{ overflowX: 'auto', marginBottom: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', minWidth: stations.length * 120, gap: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', minWidth: stations.length * 140, gap: 0 }}>
             {stations.map((st, i) => (
               <React.Fragment key={i}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 100, flex: '0 0 auto' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 110, flex: '0 0 auto' }}>
                   <div style={{
-                    width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: st.isOrigin ? '#0d2b4e' : st.isDestination ? (status.toLowerCase() === 'delivered' ? '#16a34a' : '#2563eb') : '#e2e8f0',
+                    width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: st.isOrigin ? '#0d2b4e' : st.isDestination ? (status === 'ARRIVED' ? '#16a34a' : '#2563eb') : '#e2e8f0',
                     color: (st.isOrigin || st.isDestination) ? '#fff' : '#64748b',
-                    fontSize: 14, fontWeight: 700, border: '2px solid',
-                    borderColor: st.isOrigin ? '#0d2b4e' : st.isDestination ? (status.toLowerCase() === 'delivered' ? '#16a34a' : '#2563eb') : '#cbd5e1'
+                    fontSize: 15, fontWeight: 700, border: '2px solid',
+                    borderColor: st.isOrigin ? '#0d2b4e' : st.isDestination ? (status === 'ARRIVED' ? '#16a34a' : '#2563eb') : '#cbd5e1'
                   }}>
                     {st.isOrigin ? '✈' : st.isDestination ? '📍' : '⬤'}
                   </div>
-                  <div style={{ fontWeight: 700, fontSize: 13, marginTop: 4, color: '#0d2b4e' }}>{st.airport?.iata_code || '—'}</div>
-                  <div style={{ fontSize: 10, color: '#64748b', textAlign: 'center', maxWidth: 90 }}>{st.airport?.nearest_city || st.airport?.name || ''}</div>
+                  <div style={{ fontWeight: 700, fontSize: 14, marginTop: 4, color: '#0d2b4e' }}>{st.airport?.iata_code || '—'}</div>
+                  <div style={{ fontSize: 10, color: '#64748b', textAlign: 'center', maxWidth: 100 }}>{st.airport?.nearest_city || st.airport?.name || ''}</div>
                   {st.isOrigin && st.dep && (
                     <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 2 }}>Dep: {formatDate(st.dep?.actual || st.dep?.estimated)}</div>
                   )}
                   {!st.isOrigin && st.arr && (
                     <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 2 }}>Arr: {formatDate(st.arr?.actual || st.arr?.estimated)}</div>
                   )}
-                  {!st.isOrigin && !st.isDestination && st.dep && (
-                    <div style={{ fontSize: 9, color: '#94a3b8' }}>Dep: {formatDate(st.dep?.actual || st.dep?.estimated)}</div>
-                  )}
-                  {st.flightIn && !st.isOrigin && (
-                    <div style={{ fontSize: 9, color: '#2563eb', marginTop: 1 }}>✈️ {st.flightIn}</div>
+                  {st.flights && st.flights.length > 0 && !st.isOrigin && (
+                    <div style={{ fontSize: 9, color: '#2563eb', marginTop: 1 }}>✈️ {st.flights.join(', ')}</div>
                   )}
                 </div>
                 {i < stations.length - 1 && (
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 14, minWidth: 40 }}>
-                    <div style={{ width: '100%', height: 2, background: statusColor(routes[i]?.status || 'in_transit'), borderRadius: 2, position: 'relative' }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 16, minWidth: 50 }}>
+                    <div style={{ width: '100%', height: 2, background: '#2563eb', borderRadius: 2, position: 'relative' }}>
                       <span style={{ position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%)', fontSize: 12 }}>✈</span>
                     </div>
-                    {routes[i]?.flight_number && (
-                      <div style={{ fontSize: 9, color: '#64748b', marginTop: 6, whiteSpace: 'nowrap' }}>{routes[i].flight_number}</div>
-                    )}
                   </div>
                 )}
               </React.Fragment>
@@ -931,39 +970,90 @@ function AirTrackingResult({ data, docsData, docsLoading, token }) {
           <div className="route-port">
             <div className="port-code">{info.from?.iata_code || '—'}</div>
             <div className="port-name">{info.from?.nearest_city || info.from?.name || 'Origin'}</div>
-            <div className="port-date">{formatDate(info.departure_datetime_local?.actual || info.departure_datetime_local?.estimated)}</div>
           </div>
           <div className="route-arrow"><div className="route-line" /><div className="route-vessel">✈️ {airline.name || ''}</div></div>
           <div className="route-port">
             <div className="port-code">{info.to?.iata_code || '—'}</div>
             <div className="port-name">{info.to?.nearest_city || info.to?.name || 'Destination'}</div>
-            <div className="port-date">{info.arrival_datetime_local?.actual ? `Arrived: ${formatDate(info.arrival_datetime_local.actual)}` : info.arrival_datetime_local?.estimated ? `ETA: ${formatDate(info.arrival_datetime_local.estimated)}` : '—'}</div>
           </div>
         </div>
       )}
 
-      {/* Meta info */}
+      {/* Meta info bar */}
       <div className="tracking-meta">
-        {airline.name && <div className="meta-item"><div className="meta-label">Airline</div><div className="meta-value">{airline.name}{airline.iata_code ? ` (${airline.iata_code})` : ''}</div></div>}
-        {info.mindForwarder && <div className="meta-item"><div className="meta-label">Forwarder</div><div className="meta-value">{info.mindForwarder}</div></div>}
-        {info.mindShipmentNo && <div className="meta-item"><div className="meta-label">Shipment No.</div><div className="meta-value" style={{ fontFamily: 'monospace' }}>{info.mindShipmentNo}</div></div>}
-        {info.piece !== undefined && <div className="meta-item"><div className="meta-label">Pieces</div><div className="meta-value">{info.piece}</div></div>}
-        {info.weight !== undefined && <div className="meta-item"><div className="meta-label">Weight</div><div className="meta-value">{info.weight} kg</div></div>}
-        {meta.updated_at && <div className="meta-item"><div className="meta-label">Last Updated</div><div className="meta-value">{formatDate(meta.updated_at)}</div></div>}
+        {airline.name && <div className="meta-item"><div className="meta-label">AIRLINE</div><div className="meta-value">{airline.name}</div></div>}
+        <div className="meta-item"><div className="meta-label">AWB</div><div className="meta-value" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{meta.request_parameters?.number || '—'}</div></div>
+        {info.mindShipmentNo && <div className="meta-item"><div className="meta-label">SHIPMENT NO.</div><div className="meta-value" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{info.mindShipmentNo}</div></div>}
+        {info.mindForwarder && <div className="meta-item"><div className="meta-label">FORWARDER</div><div className="meta-value">{info.mindForwarder}</div></div>}
+        {info.mindType && <div className="meta-item"><div className="meta-label">TYPE</div><div className="meta-value">{info.mindType}</div></div>}
+        {info.flight_number && <div className="meta-item"><div className="meta-label">FLIGHT</div><div className="meta-value">{info.flight_number}</div></div>}
       </div>
+
+      {/* Flight legs table */}
+      {routes.length > 0 && (
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#0d2b4e', marginBottom: 6 }}>Flight Legs ({routes.length})</div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+              <thead>
+                <tr style={{ background: '#0d2b4e', color: '#fff' }}>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 600 }}>FROM</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 600 }}>TO</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', fontWeight: 600 }}>FLIGHT</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', fontWeight: 600 }}>ETD / ATD</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', fontWeight: 600 }}>ETA / ATA</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', fontWeight: 600 }}>PCS</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', fontWeight: 600 }}>WEIGHT</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', fontWeight: 600 }}>STATUS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {routes.map((leg, i) => (
+                  <tr key={i} style={{ background: i % 2 === 0 ? '#f8fafc' : '#fff', borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '5px 8px', fontWeight: 600 }}>{leg.from?.iata_code || '—'}</td>
+                    <td style={{ padding: '5px 8px', fontWeight: 600 }}>{leg.to?.iata_code || '—'}</td>
+                    <td style={{ padding: '5px 8px', textAlign: 'center', color: '#2563eb', fontWeight: 600 }}>{leg.flight_number || '—'}</td>
+                    <td style={{ padding: '5px 8px', textAlign: 'center', fontSize: 10 }}>
+                      <span style={{ color: leg.departure_datetime_local?.actual ? '#16a34a' : '#0d2b4e' }}>
+                        {fmtDateTime(leg.departure_datetime_local)}
+                      </span>
+                    </td>
+                    <td style={{ padding: '5px 8px', textAlign: 'center', fontSize: 10 }}>
+                      <span style={{ color: leg.arrival_datetime_local?.actual ? '#16a34a' : '#0d2b4e' }}>
+                        {fmtDateTime(leg.arrival_datetime_local)}
+                      </span>
+                    </td>
+                    <td style={{ padding: '5px 8px', textAlign: 'center' }}>{leg.piece || '—'}</td>
+                    <td style={{ padding: '5px 8px', textAlign: 'center' }}>{leg.weight ? `${leg.weight} kg` : '—'}</td>
+                    <td style={{ padding: '5px 8px', textAlign: 'center' }}>
+                      <span style={{
+                        background: leg.status === 'ARRIVED' ? '#dcfce7' : leg.status === 'IN_TRANSIT' ? '#dbeafe' : '#f1f5f9',
+                        color: leg.status === 'ARRIVED' ? '#16a34a' : leg.status === 'IN_TRANSIT' ? '#2563eb' : '#64748b',
+                        padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 600
+                      }}>{(leg.status || 'Unknown').replace(/_/g, ' ')}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4, textAlign: 'right' }}>
+            Total: {info.piece || '—'} pcs · {info.weight ? `${info.weight} kg` : '—'}
+          </div>
+        </div>
+      )}
 
       {/* Events + Documents side-by-side */}
       {(events.length > 0 || docsLoading || hasDocs) && (
         <div className="events-docs-row">
           {events.length > 0 && (
             <div className="events-col">
-              <div className="events-col-title">Shipment Events</div>
+              <div className="events-col-title">Shipment Events ({events.length})</div>
               <div className="timeline">
                 {events.map((ev, i) => (
                   <div key={i} className={`timeline-event ${ev.datetime_local?.actual ? 'actual' : 'estimated'} ${i === events.length - 1 ? 'latest' : ''}`}>
                     <div className="event-date">
-                      {formatDate(ev.datetime_local?.actual || ev.datetime_local?.estimated)}
-                      {!ev.datetime_local?.actual ? ' (est.)' : ''}
+                      {fmtDateTime(ev.datetime_local)}
                     </div>
                     <div className="event-desc">{ev.description || ev.event_code}</div>
                     <div className="event-location">

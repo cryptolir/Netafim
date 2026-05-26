@@ -1697,6 +1697,9 @@ export default function ClientPortal() {
     setTrackingLoading(true);
     setTrackingError(null);
     setTrackingData(null);
+    // Clear air tracking so map only shows the latest search
+    setAirTrackingData(null);
+    setAirTrackingError(null);
     try {
       const res = await axios.get(`/api/containers/track/${encodeURIComponent(trackingNumber.trim())}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -1806,6 +1809,9 @@ export default function ClientPortal() {
     setAirTrackingLoading(true);
     setAirTrackingError(null);
     setAirTrackingData(null);
+    // Clear sea tracking so map only shows the latest search
+    setTrackingData(null);
+    setTrackingError(null);
     try {
       const res = await axios.get(`/api/containers/air/track/${encodeURIComponent(awbNumber.trim())}`, {
         headers: { Authorization: `Bearer ${token}` }

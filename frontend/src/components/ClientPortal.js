@@ -905,7 +905,7 @@ const COUNTRIES = [
   'Venezuela','Vietnam','Yemen','Zambia','Zimbabwe'
 ];
 
-function ShipmentDetailsForm({ sapData }) {
+function ShipmentDetailsForm({ sapData, token }) {
   const [formData, setFormData] = useState({
     businessUnit: '',
     consignee: '',
@@ -915,19 +915,57 @@ function ShipmentDetailsForm({ sapData }) {
     reportType: '',
   });
   const [generated, setGenerated] = useState(false);
+  const [reportBlobUrl, setReportBlobUrl] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState('');
 
   // SAP-sourced read-only values
   const plannedShippingCost = sapData?.plannedShippingCost || 'N/A';
   const annualShippingCost = sapData?.annualShippingCost || 'N/A';
 
+  // Map dropdown values to backend report keys
+  const REPORT_KEY_MAP = {
+    demurrage: 'demurrage',
+    late_shipments: 'late_shipments',
+    per_carrier: 'shipments_per_carrier',
+    per_forwarder: 'shipments_per_forwarder',
+  };
+
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setGenerated(false);
+    if (field === 'reportType') {
+      // Clear previous report when type changes
+      if (reportBlobUrl) URL.revokeObjectURL(reportBlobUrl);
+      setReportBlobUrl(null);
+      setReportError('');
+    }
   };
 
-  const handleGenerate = () => {
-    setGenerated(true);
-    setTimeout(() => setGenerated(false), 3000);
+  const handleGenerate = async () => {
+    if (!formData.reportType) {
+      setReportError('Please select a report type.');
+      return;
+    }
+    setReportLoading(true);
+    setReportError('');
+    if (reportBlobUrl) URL.revokeObjectURL(reportBlobUrl);
+    setReportBlobUrl(null);
+    try {
+      const key = REPORT_KEY_MAP[formData.reportType];
+      const res = await fetch(`/api/documents/reports/download/${key}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Report not available');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      setReportBlobUrl(url);
+      setGenerated(true);
+    } catch (err) {
+      setReportError('Failed to generate report. Please try again.');
+    } finally {
+      setReportLoading(false);
+    }
   };
 
   const costDiff = () => {
@@ -1107,15 +1145,42 @@ function ShipmentDetailsForm({ sapData }) {
           When no SAP connection is available, values default to <em>N/A</em>.
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12, gap: 8, alignItems: 'center' }}>
+          {reportError && <span style={{ color: '#dc2626', fontSize: 12 }}>{reportError}</span>}
           <button
             className="btn-search"
             onClick={handleGenerate}
+            disabled={reportLoading}
             style={{ minWidth: 150 }}
           >
-            {generated ? '✅ Report Generated' : '📊 Generate Report'}
+            {reportLoading ? '⏳ Generating...' : generated ? '✅ Report Generated' : '📊 Generate Report'}
           </button>
         </div>
+
+        {/* Report PDF Viewer */}
+        {reportBlobUrl && (
+          <div style={{ marginTop: 16, border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden', background: '#f8fafc' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', background: '#0d2b4e', color: '#fff' }}>
+              <span style={{ fontWeight: 600, fontSize: 13 }}>📄 Report Preview</span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <a
+                  href={reportBlobUrl}
+                  download={`${formData.reportType || 'report'}.pdf`}
+                  style={{ color: '#fff', fontSize: 12, textDecoration: 'none', background: '#2563eb', padding: '4px 10px', borderRadius: 4 }}
+                >↓ Download</a>
+                <button
+                  onClick={() => { URL.revokeObjectURL(reportBlobUrl); setReportBlobUrl(null); setGenerated(false); }}
+                  style={{ color: '#fff', fontSize: 14, background: 'transparent', border: 'none', cursor: 'pointer' }}
+                >✕</button>
+              </div>
+            </div>
+            <iframe
+              src={reportBlobUrl}
+              title="Report Preview"
+              style={{ width: '100%', height: 500, border: 'none' }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1770,7 +1835,7 @@ export default function ClientPortal() {
             airSchedulesData={airSchedulesData}
           />
           <AllContainersList />
-          <ShipmentDetailsForm sapData={null} />
+          <ShipmentDetailsForm sapData={null} token={token} />
         </div>
       </div>}
     </div>

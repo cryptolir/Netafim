@@ -8,24 +8,33 @@ import { useTranslation } from 'react-i18next';
 // Air shipments: MINDairshipments23.3.26.xlsx
 const PRESET_GROUPS = [
   {
-    label: '🚢 Sea Shipments',
+    label: '🚢 Sea Tracking',
     chips: [
-      { display: 'Where is container MSNU8656572?',      text: 'Where is container MSNU8656572? It is on shipment 3007308 via MSC.' },
-      { display: 'Status of shipment 4011676?',          text: 'What is the status of sea shipment 4011676? It has 4 containers: JZPU8021158, JXLU6468215, ZCSU6927417, GAOU7588197 on ZIMU carrier.' },
-      { display: 'Track container TXGU5057347',          text: 'Track container TXGU5057347 — it is on MBL MEDUKM055225, forwarder Rosenthal, carrier MSC.' },
-      { display: 'Containers in shipment 3007337?',      text: 'What containers are in shipment 3007337? Forwarder is GOA, carrier MAEU.' },
-      { display: 'Who is the forwarder for 3007394?',    text: 'Who is the forwarder for shipment 3007394 and what carrier is being used?' },
+      { display: 'Track container MSNU8656572',          text: 'Track container MSNU8656572 — give me the live status and location.' },
+      { display: 'Where is MBL ZIMUMER25802993?',        text: 'Track MBL ZIMUMER25802993 and show me its current status.' },
+      { display: 'Track container TXGU5057347',          text: 'Track container TXGU5057347 and show me the latest events.' },
+      { display: 'Status of shipment 4011676?',          text: 'What is the live tracking status of shipment 4011676 containers?' },
+      { display: 'Containers in shipment 3007337?',      text: 'What containers are in shipment 3007337 and what is their status?' },
       { display: 'MBL for shipment 4011660?',            text: 'What is the MBL number for shipment 4011660 handled by DHL?' },
     ]
   },
   {
-    label: '✈️ Air Shipments',
+    label: '✈️ Air Tracking',
     chips: [
-      { display: 'Track AWB 700-5128021300',             text: 'Track air shipment AWB 700-5128021300 going to Jakarta, shipment 2440348.' },
-      { display: 'Status of AWB 716-0188634?',           text: 'What is the status of air shipment AWB 716-0188634 to Cape Town, shipment 2440321?' },
-      { display: 'Track AWB 114-64228592 to Lima',       text: 'Track air shipment AWB 114-64228592 to Lima, Peru — shipment 2440328, forwarder Fritz.' },
+      { display: 'Track AWB 70051280213',                text: 'Track air shipment AWB 70051280213 — show me the live flight status and route.' },
+      { display: 'Status of AWB 716-0188634?',           text: 'Track air shipment AWB 716-0188634 to Cape Town and show live status.' },
+      { display: 'Track AWB 114-64228592 to Lima',       text: 'Track air shipment AWB 114-64228592 to Lima, Peru — show live tracking.' },
       { display: 'Which air shipments go to Jakarta?',   text: 'Which air shipments are destined for Jakarta?' },
       { display: 'Air shipments handled by FC?',         text: 'Which air shipments are handled by forwarder FC?' },
+    ]
+  },
+  {
+    label: '🗓️ Schedules & Routes',
+    chips: [
+      { display: 'Sailings from Ashdod to Hamburg',      text: 'Show me upcoming vessel sailings from Ashdod (ILASH) to Hamburg (DEHAM) in the next 4 weeks.' },
+      { display: 'Sailings from Ashdod to Rotterdam',    text: 'What are the upcoming sailings from Ashdod (ILASH) to Rotterdam (NLRTM)?' },
+      { display: 'Sailings from Shanghai to Ashdod',     text: 'Show me vessel schedules from Shanghai (CNSHA) to Ashdod (ILASH).' },
+      { display: 'ZIM sailings from Ashdod?',            text: 'Are there any ZIM sailings from Ashdod to Hamburg in the next 4 weeks?' },
     ]
   },
   {
@@ -34,7 +43,7 @@ const PRESET_GROUPS = [
       { display: 'List all active sea shipments',        text: 'List all active sea shipments with their shipment numbers, containers, and forwarders.' },
       { display: 'List all air shipments',               text: 'List all air shipments with AWB numbers, destinations, and forwarders.' },
       { display: 'Which forwarder handles most cargo?',  text: 'Which freight forwarder handles the most shipments across sea and air?' },
-      { display: 'Shipments on ZIMU carrier?',           text: 'Which shipments are using ZIMU as the carrier?' },
+      { display: 'Shipments on ZIM carrier?',            text: 'Which shipments are using ZIM (ZIMU) as the carrier?' },
       { display: 'How many containers in transit?',      text: 'How many sea containers are currently in transit and what are their numbers?' },
     ]
   },
@@ -43,11 +52,11 @@ const PRESET_GROUPS = [
 // Flat list for the welcome screen (show a sample from each group)
 const WELCOME_CHIPS = [
   PRESET_GROUPS[0].chips[0],
-  PRESET_GROUPS[0].chips[1],
   PRESET_GROUPS[1].chips[0],
-  PRESET_GROUPS[1].chips[1],
   PRESET_GROUPS[2].chips[0],
-  PRESET_GROUPS[2].chips[3],
+  PRESET_GROUPS[0].chips[1],
+  PRESET_GROUPS[1].chips[1],
+  PRESET_GROUPS[2].chips[1],
 ];
 
 function formatTime(date) {

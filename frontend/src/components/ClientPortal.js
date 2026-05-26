@@ -1110,6 +1110,7 @@ function ShipmentDetailsForm({ sapData, token }) {
   const [reportBlobUrl, setReportBlobUrl] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
   const [reportError, setReportError] = useState('');
+  const [reportPreviewOpen, setReportPreviewOpen] = useState(false);
 
   // SAP-sourced read-only values
   const plannedShippingCost = sapData?.plannedShippingCost || 'N/A';
@@ -1349,28 +1350,45 @@ function ShipmentDetailsForm({ sapData, token }) {
           </button>
         </div>
 
-        {/* Report PDF Viewer */}
+        {/* Report action buttons after generation */}
         {reportBlobUrl && (
-          <div style={{ marginTop: 16, border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden', background: '#f8fafc' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', background: '#0d2b4e', color: '#fff' }}>
-              <span style={{ fontWeight: 600, fontSize: 13 }}>📄 Report Preview</span>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <a
-                  href={reportBlobUrl}
-                  download={`${formData.reportType || 'report'}.pdf`}
-                  style={{ color: '#fff', fontSize: 12, textDecoration: 'none', background: '#2563eb', padding: '4px 10px', borderRadius: 4 }}
-                >↓ Download</a>
-                <button
-                  onClick={() => { URL.revokeObjectURL(reportBlobUrl); setReportBlobUrl(null); setGenerated(false); }}
-                  style={{ color: '#fff', fontSize: 14, background: 'transparent', border: 'none', cursor: 'pointer' }}
-                >✕</button>
-              </div>
+          <div className="report-actions-bar">
+            <div className="report-actions-label">✅ Report ready</div>
+            <div className="report-actions-btns">
+              <button
+                className="report-preview-btn"
+                onClick={() => setReportPreviewOpen(true)}
+              >👁 Preview Report</button>
+              <a
+                href={reportBlobUrl}
+                download={`${formData.reportType || 'report'}.pdf`}
+                className="report-download-btn"
+              >↓ Download PDF</a>
             </div>
-            <iframe
-              src={reportBlobUrl}
-              title="Report Preview"
-              style={{ width: '100%', height: 500, border: 'none' }}
-            />
+          </div>
+        )}
+
+        {/* Report Preview Popup Modal */}
+        {reportPreviewOpen && reportBlobUrl && (
+          <div className="report-preview-overlay" onClick={() => setReportPreviewOpen(false)}>
+            <div className="report-preview-modal" onClick={e => e.stopPropagation()}>
+              <div className="report-preview-header">
+                <span className="report-preview-title">📄 Report Preview</span>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <a
+                    href={reportBlobUrl}
+                    download={`${formData.reportType || 'report'}.pdf`}
+                    className="doc-preview-dl-btn"
+                  >↓ Download</a>
+                  <button className="doc-preview-close" onClick={() => setReportPreviewOpen(false)}>✕</button>
+                </div>
+              </div>
+              <iframe
+                src={reportBlobUrl}
+                title="Report Preview"
+                className="report-preview-iframe"
+              />
+            </div>
           </div>
         )}
       </div>

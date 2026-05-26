@@ -1198,6 +1198,7 @@ function ShipmentDetailsForm({ sapData, token }) {
   });
   const [generated, setGenerated] = useState(false);
   const [reportBlobUrl, setReportBlobUrl] = useState(null);
+  const [reportData, setReportData] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
   const [reportError, setReportError] = useState('');
   const [reportPreviewOpen, setReportPreviewOpen] = useState(false);
@@ -1218,9 +1219,9 @@ function ShipmentDetailsForm({ sapData, token }) {
     setFormData(prev => ({ ...prev, [field]: value }));
     setGenerated(false);
     if (field === 'reportType') {
-      // Clear previous report when type changes
       if (reportBlobUrl) URL.revokeObjectURL(reportBlobUrl);
       setReportBlobUrl(null);
+      setReportData(null);
       setReportError('');
     }
   };
@@ -1234,15 +1235,26 @@ function ShipmentDetailsForm({ sapData, token }) {
     setReportError('');
     if (reportBlobUrl) URL.revokeObjectURL(reportBlobUrl);
     setReportBlobUrl(null);
+    setReportData(null);
     try {
       const key = REPORT_KEY_MAP[formData.reportType];
-      const res = await fetch(`/api/documents/reports/download/${key}`, {
+      // Fetch JSON data for HTML preview
+      const dataRes = await fetch(`/api/documents/reports/data/${key}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error('Report not available');
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      setReportBlobUrl(url);
+      if (dataRes.ok) {
+        const json = await dataRes.json();
+        setReportData(json);
+      }
+      // Also fetch PDF for download
+      const pdfRes = await fetch(`/api/documents/reports/download/${key}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (pdfRes.ok) {
+        const blob = await pdfRes.blob();
+        const url = URL.createObjectURL(blob);
+        setReportBlobUrl(url);
+      }
       setGenerated(true);
     } catch (err) {
       setReportError('Failed to generate report. Please try again.');
@@ -1441,7 +1453,7 @@ function ShipmentDetailsForm({ sapData, token }) {
         </div>
 
         {/* Report action buttons after generation */}
-        {reportBlobUrl && (
+        {generated && (reportData || reportBlobUrl) && (
           <div className="report-actions-bar">
             <div className="report-actions-label">✅ Report ready</div>
             <div className="report-actions-btns">
@@ -1449,35 +1461,161 @@ function ShipmentDetailsForm({ sapData, token }) {
                 className="report-preview-btn"
                 onClick={() => setReportPreviewOpen(true)}
               >👁 Preview Report</button>
-              <a
-                href={reportBlobUrl}
-                download={`${formData.reportType || 'report'}.pdf`}
-                className="report-download-btn"
-              >↓ Download PDF</a>
+              {reportBlobUrl && (
+                <a
+                  href={reportBlobUrl}
+                  download={`${formData.reportType || 'report'}.pdf`}
+                  className="report-download-btn"
+                >↓ Download PDF</a>
+              )}
             </div>
           </div>
         )}
 
-        {/* Report Preview Popup Modal */}
-        {reportPreviewOpen && reportBlobUrl && (
+        {/* Report Preview Popup Modal — HTML rendered */}
+        {reportPreviewOpen && reportData && (
           <div className="report-preview-overlay" onClick={() => setReportPreviewOpen(false)}>
             <div className="report-preview-modal" onClick={e => e.stopPropagation()}>
               <div className="report-preview-header">
                 <span className="report-preview-title">📄 Report Preview</span>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <a
-                    href={reportBlobUrl}
-                    download={`${formData.reportType || 'report'}.pdf`}
-                    className="doc-preview-dl-btn"
-                  >↓ Download</a>
+                  {reportBlobUrl && (
+                    <a
+                      href={reportBlobUrl}
+                      download={`${formData.reportType || 'report'}.pdf`}
+                      className="doc-preview-dl-btn"
+                    >↓ Download</a>
+                  )}
                   <button className="doc-preview-close" onClick={() => setReportPreviewOpen(false)}>✕</button>
                 </div>
               </div>
-              <iframe
-                src={reportBlobUrl}
-                title="Report Preview"
-                className="report-preview-iframe"
-              />
+              <div className="report-html-content">
+                {/* Report Header */}
+                <div className="report-html-header">
+                  <div className="report-html-company">NETAFIM LTD.</div>
+                  <div className="report-html-subtitle">Logistics Portal - Report Generated: {reportData.generatedDate}</div>
+                  <h1 className="report-html-title">{reportData.title}</h1>
+                </div>
+
+                {/* Summary */}
+                <div className="report-html-section">
+                  <h2>Summary</h2>
+                  <p>{reportData.summary}</p>
+                </div>
+
+                {/* Late Shipments Detail */}
+                {reportData.reportType === 'late_shipments' && reportData.lateShipments && (
+                  <>
+                    <div className="report-html-section">
+                      <h2>Late Shipments Detail</h2>
+                      <table className="report-html-table">
+                        <thead>
+                          <tr>
+                            <th>Shipment</th><th>MBL</th><th>Forwarder</th><th>Carrier</th>
+                            <th>Planned ETA</th><th>Actual Arrival</th><th>Days Late</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reportData.lateShipments.map((s, i) => (
+                            <tr key={i}>
+                              <td>{s.shipmentNo}</td><td style={{fontFamily:'monospace',fontSize:11}}>{s.mbl}</td>
+                              <td>{s.forwarder}</td><td>{s.carrier}</td>
+                              <td>{s.plannedETA}</td><td>{s.actualArrival}</td>
+                              <td style={{fontWeight:700,color:'#dc2626'}}>{s.daysLate}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="report-html-section">
+                      <h2>Late Shipments by Forwarder</h2>
+                      <table className="report-html-table">
+                        <thead><tr><th>Forwarder</th><th>Total Shipments</th><th>Late</th><th>% Late</th><th>Avg Days Late</th></tr></thead>
+                        <tbody>
+                          {reportData.forwarderTable.map((r, i) => (
+                            <tr key={i}><td>{r.forwarder}</td><td>{r.total}</td><td>{r.late}</td><td>{r.pctLate}%</td><td>{r.avgDays}</td></tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="report-html-section">
+                      <h2>Late Shipments by Carrier</h2>
+                      <table className="report-html-table">
+                        <thead><tr><th>Carrier</th><th>Total Shipments</th><th>Late</th><th>% Late</th><th>Avg Days Late</th></tr></thead>
+                        <tbody>
+                          {reportData.carrierTable.map((r, i) => (
+                            <tr key={i}><td>{r.carrier}</td><td>{r.total}</td><td>{r.late}</td><td>{r.pctLate}%</td><td>{r.avgDays}</td></tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {reportData.rootCauses && (
+                      <div className="report-html-section">
+                        <h2>Root Cause Analysis</h2>
+                        <ul className="report-html-list">
+                          {reportData.rootCauses.map((c, i) => <li key={i}>{c}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Shipments per Carrier */}
+                {reportData.reportType === 'shipments_per_carrier' && reportData.carrierTable && (
+                  <div className="report-html-section">
+                    <h2>Shipments by Carrier</h2>
+                    <table className="report-html-table">
+                      <thead><tr><th>Carrier</th><th>Total</th><th>Sea</th><th>Air</th><th>Containers</th></tr></thead>
+                      <tbody>
+                        {reportData.carrierTable.map((r, i) => (
+                          <tr key={i}><td>{r.carrier}</td><td style={{fontWeight:700}}>{r.total}</td><td>{r.sea}</td><td>{r.air}</td><td>{r.containers}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Shipments per Forwarder */}
+                {reportData.reportType === 'shipments_per_forwarder' && reportData.forwarderTable && (
+                  <div className="report-html-section">
+                    <h2>Shipments by Forwarder</h2>
+                    <table className="report-html-table">
+                      <thead><tr><th>Forwarder</th><th>Total</th><th>Sea</th><th>Air</th><th>Containers</th></tr></thead>
+                      <tbody>
+                        {reportData.forwarderTable.map((r, i) => (
+                          <tr key={i}><td>{r.forwarder}</td><td style={{fontWeight:700}}>{r.total}</td><td>{r.sea}</td><td>{r.air}</td><td>{r.containers}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Demurrage */}
+                {reportData.reportType === 'demurrage' && reportData.demurrageData && (
+                  <div className="report-html-section">
+                    <h2>Demurrage Charges</h2>
+                    <table className="report-html-table">
+                      <thead><tr><th>Shipment</th><th>Container</th><th>Port</th><th>Days in Port</th><th>Free Days</th><th>Demurrage Days</th><th>Daily Rate</th><th>Total Cost</th></tr></thead>
+                      <tbody>
+                        {reportData.demurrageData.map((r, i) => (
+                          <tr key={i}>
+                            <td>{r.shipmentNo}</td><td style={{fontFamily:'monospace',fontSize:11}}>{r.container}</td>
+                            <td>{r.port}</td><td>{r.daysInPort}</td><td>{r.freeDays}</td>
+                            <td style={{fontWeight:700,color:'#dc2626'}}>{r.demurrageDays}</td>
+                            <td>${r.dailyRate}</td><td style={{fontWeight:700}}>${r.totalCost.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr style={{fontWeight:700,background:'#f1f5f9'}}>
+                          <td colSpan={7} style={{textAlign:'right'}}>Total Demurrage Cost:</td>
+                          <td>${reportData.totalCost.toLocaleString()}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

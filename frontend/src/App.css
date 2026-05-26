@@ -2554,6 +2554,97 @@ body {
   background: #f1f5f9;
 }
 
+/* Report HTML Content Styles */
+.report-html-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 40px 50px;
+  background: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #1e293b;
+  line-height: 1.6;
+}
+.report-html-header {
+  border-bottom: 3px solid #1e3a5f;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+.report-html-company {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0d2b4e;
+  letter-spacing: 0.5px;
+}
+.report-html-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+.report-html-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin: 12px 0 0 0;
+}
+.report-html-section {
+  margin-bottom: 28px;
+}
+.report-html-section h2 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0d2b4e;
+  margin: 0 0 10px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.report-html-section p {
+  font-size: 13px;
+  color: #334155;
+  margin: 0;
+}
+.report-html-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 8px;
+}
+.report-html-table thead tr {
+  background: #1e3a5f;
+  color: #fff;
+}
+.report-html-table th {
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.report-html-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 12px;
+}
+.report-html-table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+.report-html-table tbody tr:hover {
+  background: #eef2ff;
+}
+.report-html-table tfoot td {
+  padding: 10px;
+  border-top: 2px solid #1e3a5f;
+}
+.report-html-list {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+}
+.report-html-list li {
+  font-size: 13px;
+  color: #334155;
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
 /* ── Preset question groups (AI chat) ───────────────────────────────────── */
 .preset-toggle-btn {
   margin-top: 10px;

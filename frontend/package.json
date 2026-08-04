@@ -1,8 +1,8 @@
 {
-  "name": "netafim-frontend",
+  "name": "mind-logistics-frontend",
   "version": "1.0.0",
   "private": true,
-  "description": "React client for the Netafim web application",
+  "description": "React client for the mind-logistics web application",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",

@@ -1,5 +1,5 @@
 /**
- * BusinessChat.js — Netafim Business Chat
+ * BusinessChat.js — mind-logistics Business Chat
  * Layout: phone-style chat window on the left + shipment info panel on the right
  */
 import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';

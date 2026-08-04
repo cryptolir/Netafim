@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import BusinessChat from './BusinessChat';
-import netafimLogo from '../netafim-logo.png';
+import mindLogisticsLogo from '../netafim-logo.png';
 import axios from 'axios';
 import APP_VERSION from '../version';
 import { useTranslation } from 'react-i18next';
@@ -9,7 +9,7 @@ import ChatAgent from './ChatAgent';
 import AllContainersList from './AllContainersList';
 import ShippingMap from './ShippingMap';
 
-// Common Netafim port codes for quick selection
+// Common mind-logistics port codes for quick selection
 const NETAFIM_PORTS = [
   { code: 'ILASH', name: 'Ashdod, IL' },
   { code: 'ILHFA', name: 'Haifa, IL' },
@@ -1492,7 +1492,7 @@ function ShipmentDetailsForm({ sapData, token }) {
               <div className="report-html-content">
                 {/* Report Header */}
                 <div className="report-html-header">
-                  <div className="report-html-company">NETAFIM LTD.</div>
+                  <div className="report-html-company">MIND-LOGISTICS LTD.</div>
                   <div className="report-html-subtitle">Logistics Portal - Report Generated: {reportData.generatedDate}</div>
                   <h1 className="report-html-title">{reportData.title}</h1>
                 </div>
@@ -1875,7 +1875,7 @@ export default function ClientPortal() {
       {/* Top navigation */}
       <nav className="top-nav">
         <div className="nav-brand">
-          <img src={netafimLogo} alt="Netafim" className="nav-logo-img" />
+          <img src={mindLogisticsLogo} alt="mind-logistics" className="nav-logo-img" />
         </div>
         <div className="nav-tabs">
           <button

@@ -1,7 +1,7 @@
 {
-  "name": "netafim",
+  "name": "mind-logistics",
   "version": "1.0.0",
-  "description": "Netafim full-stack web application",
+  "description": "mind-logistics full-stack web application",
   "scripts": {
     "install-all": "npm install --prefix backend && npm install --prefix frontend",
     "build": "CI=false npm run build --prefix frontend",

@@ -845,7 +845,7 @@ export default function ShippingMap({
         ) : scheduleArcs.length > 0 ? (
           <span>📅 Showing {scheduleArcs.length} schedule route{scheduleArcs.length > 1 ? 's' : ''} · Click markers for details</span>
         ) : (
-          <span>🌍 Netafim port &amp; airport network · Track a shipment to see its route · Toggle Sea/Air layers above</span>
+          <span>🌍 mind-logistics port &amp; airport network · Track a shipment to see its route · Toggle Sea/Air layers above</span>
         )}
         <span style={{ marginLeft: 'auto', color: '#94a3b8', fontSize: 11 }}>Scroll to zoom · Click markers for details</span>
       </div>

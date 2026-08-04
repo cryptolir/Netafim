@@ -72,7 +72,7 @@ export default function ChatAgent({ airTrackingData, airSchedulesData }) {
   const [showAllPresets, setShowAllPresets] = useState(false);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
-  const sessionId = useRef(`netafim_${Date.now()}`);
+  const sessionId = useRef(`mind-logistics_${Date.now()}`);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -158,7 +158,7 @@ export default function ChatAgent({ airTrackingData, airSchedulesData }) {
       <div className="chat-phone-notch">
         <div className="agent-avatar">🤖</div>
         <div className="agent-info">
-          <div className="agent-name">Netafim AI Assistant</div>
+          <div className="agent-name">mind-logistics AI Assistant</div>
           <div className="agent-status">
             <span className="online-dot" />
             Powered by SeaRates AI
